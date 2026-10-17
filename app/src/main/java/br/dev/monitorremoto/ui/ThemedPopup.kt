@@ -4,6 +4,7 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.res.Configuration
 import br.dev.monitorremoto.core.SettingsStore
+import br.dev.monitorremoto.R
 
 /** Estilo de diálogo compartilhado por telas legadas e novas; preserva callbacks,
  * confirmação negativa e semântica das ações perigosas. */
@@ -15,6 +16,6 @@ internal fun themedPopup(context: Context): AlertDialog.Builder {
         else -> false
     }
     return AlertDialog.Builder(context,
-        if (night) android.R.style.Theme_Material_Dialog_Alert
-        else android.R.style.Theme_Material_Light_Dialog_Alert)
+        if (night) R.style.MonitorDialogDark
+        else R.style.MonitorDialogLight)
 }

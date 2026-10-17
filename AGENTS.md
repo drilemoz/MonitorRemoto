@@ -1,3 +1,9 @@
+# Monitor Remoto 0.1.0-alpha.94
+
+- Alpha.94 cria o kit reutilizável `ui/MonitorVisualKit.kt` para padronizar gradualmente telas e diálogos Android sem introduzir dependência Material3/Compose. Ao criar ou refatorar diálogos, preservar comandos e confirmações de cada módulo, usar os temas `MonitorDialogLight/Dark` e testes de regressão.
+- Em Energia e manutenção, **bloquear** exige administrador/autorização e confirmação textual, **acender** apenas encaminha à orientação de Ver tela, **reiniciar** continua dependendo de conexão ADB TLS ao mesmo aparelho e confirmação dentro de `AdbActivity`. Não adicionar desligamento remoto.
+- Incrementar versão sequencial para alpha.95 na próxima alteração. Compilar Android via GitHub Actions antes de afirmar que o APK funciona.
+
 # Monitor Remoto 0.1.0-alpha.93
 
 - A consulta `locationSnapshot` é autenticada com a chave AES-GCM já pareada, controle de nonce, versão exata e registro de acesso. Ela só retorna o último fix permitido pelo `LocationShareStore`, nunca inicia GNSS por comando remoto.

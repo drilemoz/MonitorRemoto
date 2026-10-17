@@ -15,11 +15,11 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "Bem-vindo à atualização"))
     sectionGap(layout, 10)
     val entries = listOf(
-        "Mapa mais limpo" to "Estados de conexão e GPS em chips, precisão e idade da posição bem destacados.",
-        "Última resposta" to "Mostra tempo desde a consulta autenticada, separado da idade da coordenada.",
-        "Acompanhar" to "Atualiza a consulta GPS a cada 3 segundos enquanto esta tela permanece aberta.",
-        "Consulta enxuta" to "Nova operação cifrada de localização, sem carregar SMS, rede e telemetria completa.",
-        "Privacidade" to "Não força GPS novo nem ultrapassa autorização do monitorado; leituras antigas não aparecem como ao vivo."
+        "Visual do aplicativo" to "Novo kit de componentes compartilhados com ícones, cartões compactos e estados coerentes.",
+        "Energia e manutenção" to "Diálogo central redesenhado com ações claras e indicação de quando o ADB é necessário.",
+        "Confirmações" to "Avisos e ações críticas com cabeçalhos, rodapé e cores próprios para cada tipo de ação.",
+        "Tema claro e escuro" to "Diálogos arredondados com cores e contrastes consistentes nos dois temas.",
+        "Segurança preservada" to "Nenhuma mudança nas autorizações remotas ou na confirmação do ADB."
     )
     entries.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))

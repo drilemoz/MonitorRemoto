@@ -16,7 +16,7 @@ assert match, "versionName ausente"
 version = match.group(1)
 code = re.search(r'\bversionCode\s*=\s*(\d+)', gradle)
 assert code, "versionCode ausente"
-assert version == "0.1.0-alpha.93" and code.group(1) == "93", "Versões incompatíveis"
+assert version == "0.1.0-alpha.94" and code.group(1) == "94", "Versões incompatíveis"
 appver = (root / 'app/src/main/java/br/dev/monitorremoto/transport/AppVersion.kt').read_text()
 assert f'const val NAME = "{version}"' in appver, "AppVersion fora de sincronia com o Gradle"
 assert 'AppVersion.NAME' in ui, "Tela de versão desatualizada"
@@ -796,7 +796,7 @@ for token in ['copyBatchDownloads', 'publishStaged', 'MAX_BATCH_ITEMS = 20',
     assert token in files57, f'alpha.57: função ausente: {token}'
 assert 'SharedDataFolder.handle' not in files57
 assert 'MANAGE_EXTERNAL_STORAGE' not in (root / 'app/src/main/AndroidManifest.xml').read_text()
-assert 'Reiniciar normalmente' in dashboard57 and 'iconSectionHeader' in dashboard57
+assert 'Reiniciar normalmente' in dashboard57 and ('iconSectionHeader' in dashboard57 or 'visualHeader(' in dashboard57)
 assert 'val deviceCard = card(body, fill = soft)' in ui56
 assert 's?.toString()?.trim() == "REINICIAR"' in ui56
 assert 'adb.requestNormalReboot()' in ui56
@@ -1328,3 +1328,16 @@ assert 'LocationUiPolicy.refreshDelayMs(tracking, automatic, intervalMs)' in loc
 assert 'lastResponseAtMs = System.currentTimeMillis()' in location93 and 'fixAgeAtResponseMs = age' in location93
 assert 'main.removeCallbacks(ticker)' in location93 and 'main.removeCallbacks(statusTicker)' in location93
 print('PASSOU: alpha.93 status dinâmico, posição sem telemetria pesada, rastreamento somente em tela ativa.')
+
+# Alpha.94: desenho compartilhado e manutenção sem comandos silenciosos.
+kit = (ui_root / "MonitorVisualKit.kt").read_text(encoding="utf-8")
+maintenance = (ui_root / "RemoteDashboardUi.kt").read_text(encoding="utf-8")
+dialogs = (ui_root / "AppDialogUi.kt").read_text(encoding="utf-8")
+theme = (ui_root / "ThemedPopup.kt").read_text(encoding="utf-8")
+assert all(x in kit for x in ["visualHeader(", "visualTag(", "visualActionRow(", "visualInfoPanel(", "visualDialogContainer("])
+assert all(x in maintenance for x in ["Energia e Manutenção", "Bloquear tela", "Acender tela", "Reiniciar normalmente", "Antes de reiniciar", "AdbActivity.EXTRA_MAINTENANCE_HOST"])
+assert "visualDialogContainer()" in dialogs and 'secondary = "Cancelar"' in dialogs
+assert "MonitorDialogDark" in theme and "MonitorDialogLight" in theme
+assert (root / "app/src/main/res/values/monitor_dialog_styles.xml").exists()
+assert "setBackgroundDrawableResource(android.R.color.transparent)" in maintenance
+print("PASSOU: alpha.94 identidade visual, manutenção e segurança de ações preservadas")

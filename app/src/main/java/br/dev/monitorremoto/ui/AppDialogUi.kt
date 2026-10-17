@@ -23,32 +23,38 @@ private fun MainActivity.showThemedMessageDialog(
     primary: String, destructive: Boolean = false, secondary: String? = null,
     onPrimary: (() -> Unit)? = null,
 ) {
-    val (wrapper, layout) = dialogWrapper()
-    layout.background = shape(surface, 22, true)
-    layout.setPadding(dp(18), dp(17), dp(18), dp(15))
-    layout.addView(iconSectionHeader(icon, title))
-    sectionGap(layout, 8)
-    layout.addView(label(description, 14f).apply {
-        setLineSpacing(dp(2).toFloat(), 1f)
+    val (wrapper, layout) = visualDialogContainer()
+    layout.addView(visualHeader(icon, title))
+    sectionGap(layout, 12)
+    layout.addView(panel(13).apply {
+        background = shape(fieldColor, 17)
+        addView(label(description, 13.5f).apply {
+            setPadding(0, 0, 0, 0)
+            setLineSpacing(dp(2).toFloat(), 1f)
+        })
     })
-    sectionGap(layout, 14)
+    sectionGap(layout, 15)
     lateinit var dialog: AlertDialog
     val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
     if (secondary != null) {
         actions.addView(actionButton(secondary) { dialog.dismiss() },
             LinearLayout.LayoutParams(0, dp(46), 1f).apply { rightMargin = dp(8) })
     }
-    val confirmButton = actionButton(primary, emphasis = secondary == null || !destructive) {
+    val confirmButton = actionButton(primary, emphasis = !destructive) {
         dialog.dismiss()
         onPrimary?.invoke()
     }
-    if (destructive) confirmButton.setTextColor(android.graphics.Color.rgb(188, 62, 55))
+    if (destructive) {
+        confirmButton.setTextColor(android.graphics.Color.rgb(188, 62, 55))
+        confirmButton.background = shape(if (darkTheme()) android.graphics.Color.rgb(72, 41, 43)
+            else android.graphics.Color.rgb(255, 236, 237), 16)
+    }
     actions.addView(confirmButton, LinearLayout.LayoutParams(0, dp(46), 1f))
     layout.addView(actions)
     dialog = themedPopup(this).setView(wrapper).create()
     showManagedDialog(dialog)
     dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-    dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.91f).toInt(), -2)
+    dialog.window?.setLayout((resources.displayMetrics.widthPixels * 0.92f).toInt().coerceAtMost(dp(520)), -2)
 }
 
 internal fun MainActivity.showAppNotice(

@@ -1,3 +1,12 @@
+# Monitor Remoto v0.1.0-alpha.94 · Identidade visual e energia
+
+- Componentes visuais reutilizáveis (cabeçalhos, ações, chips, avisos, botões e cartões compactos).
+- Energia e manutenção redesenhada: diálogo central, aparelho identificado, bloqueio, acender tela e reiniciar Android, com destaque para requisito ADB e aviso de segurança.
+- Novos temas dos diálogos nativos no modo claro e escuro. Notificações e confirmações da MainActivity reformuladas.
+- Mantidas as autorizações de cada operação, confirmações e regra de nunca desligar completamente o aparelho remotamente.
+- Próximas telas candidatas ao novo kit: arquivos, aplicativos, câmera, mapas e configurações. Este release não transforma automaticamente todos os diálogos dessas telas em painéis personalizados.
+- Build Gradle Android e visualização no dispositivo pendentes.
+
 # Monitor Remoto v0.1.0-alpha.93 · Localização dinâmica
 
 - Consulta autenticada **somente de localização** (`locationSnapshot`), reduzindo trabalho no servidor sem contornar autorização nem forçar leitura GNSS nova.

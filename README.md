@@ -8,7 +8,14 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.93 / versionCode 93** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.94 / versionCode 94** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Modernização visual: alpha.94
+
+- Visual compartilhado em `ui/MonitorVisualKit.kt`, incluindo cabeçalhos com ícones, linhas de ação, chips e avisos.
+- Dialogo **Energia e manutenção** reformulado e visual dos avisos e confirmações modernizado.
+- Diálogos legados passam por um tema Android arredondado nas variantes clara/escura.
+- Não foram modificados protocolos nem permissões; testes de compilação Android e conferência visual continuam necessários.
 
 ## Localização: alpha.93
 

@@ -1,3 +1,10 @@
+## 0.1.0-alpha.94 (versionCode 94) | 17/10/2026
+- Novo `MonitorVisualKit`: cabeçalhos com ícone em degradê, linhas de ação, chips de estado e avisos compactos reutilizáveis.
+- Energia e manutenção refeito como diálogo central de largura responsiva: aparelho identificado, 3 ações com ícones, separação clara da opção que requer ADB, aviso breve e fechamento acessível.
+- Avisos e confirmações principais usam cabeçalho visual, painel de mensagem, rodapé coerente e cor distinta para ações destrutivas.
+- Diálogos legados passaram a usar temas claro/escuro dedicados, cantos arredondados e cor de destaque turquesa; botões e cartões compartilhados ganharam raios padronizados.
+- Nenhum comando remoto automático, permissão nova, alteração de AES-GCM ou afrouxamento de confirmações. Compilação Android e testes visuais em aparelho pendentes.
+
 ## 0.1.0-alpha.93 (versionCode 93) | 17/10/2026
 - Localização: painel compacto com chips dinâmicos por estado, evitando mostrar “ao vivo” quando o GPS está antigo.
 - Exibe tempo desde a última resposta autenticada, precisão real (se disponível) e idade real da posição GPS; estados de falha não são tratados como localização atual.

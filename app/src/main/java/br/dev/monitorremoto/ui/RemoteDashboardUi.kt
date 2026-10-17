@@ -214,59 +214,65 @@ internal fun MainActivity.displayResult(root: JSONObject, fromCache: Boolean = f
 
 /** A conexão normal AES-GCM não confere privilégio de reinicialização. */
 private fun MainActivity.showRemoteMaintenance() {
-    val selectedHost = br.dev.monitorremoto.core.SettingsStore.getRemoteHost(this)
+    val selectedHost = SettingsStore.getRemoteHost(this)
     val name = currentDeviceTitle?.text?.toString().orEmpty().ifBlank { "Aparelho remoto" }
-    val (wrapper, layout) = dialogWrapper()
-    layout.addView(iconSectionHeader(R.drawable.ic_settings, "Energia e Manutenção", "Ações autorizadas no aparelho remoto"))
+    val (wrapper, layout) = visualDialogContainer()
+    layout.addView(visualHeader(R.drawable.ic_settings, "Energia e Manutenção", "Controles do aparelho remoto"))
     sectionGap(layout, 14)
-    layout.addView(panel(14).apply {
-        background = shape(fieldColor, 17)
-        addView(label(name, 16f, strong = true))
-        addView(label(selectedHost, 12f, muted = true))
-        addView(infoChip("Requer ADB conectado"))
-    })
+
+    val device = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        background = shape(fieldColor, 18)
+        setPadding(dp(14), dp(12), dp(14), dp(12))
+    }
+    val deviceLine = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+    val deviceText = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+    deviceText.addView(label(name, 15f, strong = true).apply { setPadding(0,0,0,0); maxLines = 1 })
+    deviceText.addView(label(selectedHost.ifBlank { "Endereço indisponível" }, 11.5f, muted = true).apply { setPadding(0,dp(3),0,0) })
+    deviceLine.addView(deviceText, LinearLayout.LayoutParams(0, -2, 1f))
+    deviceLine.addView(visualTag("Chave salva", SettingsBadgeKind.ACTIVE))
+    device.addView(deviceLine)
+    layout.addView(device)
     sectionGap(layout, 12)
-    layout.addView(label("Controles disponíveis", 12f, muted = true))
-    layout.addView(dialogCardRow(
-        title = "Bloquear tela",
-        subtitle = "Requer administrador e autorização no monitorado",
-        trailing = "›"
-    ) {
+
+    layout.addView(label("AÇÕES DISPONÍVEIS", 10.5f, strong = true, muted = true).apply {
+        letterSpacing = .10f; setPadding(0,0,0,dp(7))
+    })
+    layout.addView(visualActionRow(R.drawable.ic_shield, "Bloquear tela",
+        "Exige autorização e bloqueio seguro", "Confirmar") {
         activeUiDialog?.dismiss()
         showRemoteLockDialog()
     })
-    sectionGap(layout, 8)
-    layout.addView(dialogCardRow(
-        title = "Acender tela",
-        subtitle = "Permissão local obrigatória; não desbloqueia",
-        trailing = "›"
-    ) {
+    sectionGap(layout, 7)
+    layout.addView(visualActionRow(R.drawable.ic_remote_wake, "Acender tela",
+        "Sem desbloquear o Android", "Ver tela") {
         activeUiDialog?.dismiss()
-        showAppNotice("Acender a tela", "A função está disponível em Ver tela, mediante autorização prévia no celular monitorado. O Monitor Remoto não remove PIN nem desbloqueia o Android.")
+        showAppNotice("Acender tela", "A opção está em Ver tela. Precisa de autorização local no aparelho monitorado e não remove PIN nem desbloqueia o Android.")
     })
-    sectionGap(layout, 8)
-    layout.addView(label("Disponível", 12f, muted = true))
-    layout.addView(dialogCardRow(
-        title = "Reiniciar normalmente",
-        subtitle = "Reinicia o Android, sem desligar",
-        trailing = "›",
-        accent = true
-    ) {
+    sectionGap(layout, 7)
+    layout.addView(visualActionRow(R.drawable.ic_power, "Reiniciar normalmente",
+        "ADB pareado · confirmação obrigatória", "ADB", dangerous = true) {
         activeUiDialog?.dismiss()
         startActivity(Intent(this, AdbActivity::class.java).apply {
             putExtra(AdbActivity.EXTRA_MAINTENANCE_HOST, selectedHost)
         })
     })
+    sectionGap(layout, 13)
+
+    val notice = visualInfoPanel(R.drawable.ic_info, "Antes de reiniciar",
+        "Se o aparelho não voltar a iniciar, pode ficar inacessível sem o botão Power. A Depuração sem fios pode não voltar sozinha.")
+    layout.addView(notice)
+    layout.addView(label("Nenhum comando é executado ao abrir este painel. Reiniciar requer confirmação no ADB.",
+        11f, muted = true).apply { setPadding(0,dp(9),0,0) })
     sectionGap(layout, 12)
-    layout.addView(panel(14).apply {
-        background = shape(fieldColor, 16)
-        addView(iconSectionHeader(R.drawable.ic_info, "Antes de reiniciar"))
-        addView(label("Se o celular não voltar a iniciar, ele poderá ficar inacessível sem o botão Power. A Depuração sem fios pode não voltar sozinha.", 12.5f, muted = true))
-        addView(label("Nenhum comando é enviado ao abrir este menu. O desligamento completo não é oferecido por segurança. A confirmação de reinicialização é feita no ADB.", 12f, muted = true))
-    })
-    showManagedDialog(themedPopup(this)
-        .setView(wrapper)
-        .setNegativeButton("Cancelar", null))
+    layout.addView(actionButton("Fechar") { activeUiDialog?.dismiss() }.apply {
+        minHeight = dp(46)
+    }, LinearLayout.LayoutParams(-1, dp(46)))
+
+    val dialog = themedPopup(this).setView(wrapper).create()
+    showManagedDialog(dialog)
+    dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+    dialog.window?.setLayout((resources.displayMetrics.widthPixels * .92f).toInt().coerceAtMost(dp(520)), -2)
 }
 
 private fun MainActivity.compactMetricCard(icon: Int, title: String, value: String,

@@ -42,7 +42,7 @@ internal fun MainActivity.button(title: String, emphasis: Boolean = false, onCli
         isAllCaps = false
         textSize = 13.5f
         setTextColor(if (emphasis) highlightText else ink)
-        background = shape(if (emphasis) highlight else fieldColor, 14, !emphasis)
+        background = shape(if (emphasis) highlight else fieldColor, 17, !emphasis)
         elevation = 0f
         stateListAnimator = null
         minimumHeight = dp(46)
@@ -77,7 +77,7 @@ internal fun MainActivity.actionButton(title: String, emphasis: Boolean = false,
         isAllCaps = false
         textSize = 12.5f
         setTextColor(if (emphasis) highlightText else ink)
-        background = shape(if (emphasis) highlight else fieldColor, 12, !emphasis)
+        background = shape(if (emphasis) highlight else fieldColor, 15, !emphasis)
         elevation = 0f
         stateListAnimator = null
         minimumHeight = dp(40)
@@ -89,7 +89,7 @@ internal fun MainActivity.actionButton(title: String, emphasis: Boolean = false,
 
 internal fun MainActivity.panel(pad: Int = 14): LinearLayout = LinearLayout(this).apply {
     orientation = LinearLayout.VERTICAL
-    background = shape(surface, 18, true)
+    background = shape(surface, 20, true)
     setPadding(dp(pad), dp(pad), dp(pad), dp(pad))
 }
 
@@ -132,7 +132,7 @@ internal fun MainActivity.dialogCardRow(
 ): LinearLayout = LinearLayout(this).apply {
     orientation = LinearLayout.HORIZONTAL
     gravity = Gravity.CENTER_VERTICAL
-    background = shape(fieldColor, 16, true)
+    background = shape(fieldColor, 17, true)
     setPadding(dp(12), dp(11), dp(12), dp(11))
     val textBlock = LinearLayout(this@dialogCardRow).apply { orientation = LinearLayout.VERTICAL }
     textBlock.addView(label(title, 15f, strong = true).apply {
@@ -243,7 +243,7 @@ internal fun MainActivity.iconMenuRow(
     val trailingLabel = actionLabel ?: resolvedBadge.label
     orientation = LinearLayout.HORIZONTAL
     gravity = Gravity.CENTER_VERTICAL
-    background = shape(fieldColor, 18, true)
+    background = shape(fieldColor, 19, true)
     setPadding(dp(12), dp(12), dp(12), dp(12))
     minimumHeight = dp(72)
     isClickable = true
