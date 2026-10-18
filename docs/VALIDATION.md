@@ -1,3 +1,18 @@
+## Alpha.104 · estabilidade de conexões e alertas (17/10/2026)
+
+- [x] Fechamento explícito de sockets enfileirados/em processamento no encerramento do listener.
+- [x] Janela limitada de alertas de acesso com testes JVM.
+- [x] Verificação de chave pareada antes de aceitar resposta tardia.
+- [ ] Compilação Gradle Android completa e testes de reconexão com dois aparelhos.
+
+## Alpha.103 (17/10/2026)
+
+- [x] Remoção do redesenho de 5 s do Modo Monitorado quando assinatura visual não mudou; um único próximo ciclo é agendado.
+- [x] Política de invalidação pura testável, agrupamento de eventos autenticados e consulta do último acesso no momento da abertura dos detalhes.
+- [x] Pesquisa de Configurações com normalização pré-calculada, debounce e cancelamento ao sair da tela.
+- [x] Controles de conexão de 44 dp; atualizações de versão e validador sincronizadas.
+- [ ] Gradle Android completo e testes em dois aparelhos, FPS, consumo e rolagem reais pendentes.
+
 ## Alpha.102 (17/10/2026)
 
 - [x] Novo índice de Configurações sem títulos repetidos, opções compactas e estados Android reais.

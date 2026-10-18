@@ -43,7 +43,7 @@ internal fun MainActivity.renderController() {
                 ?: showAppNotice("Renomear", "Pareie ou salve este aparelho primeiro.")
         }
     }
-    renameRow.addView(editName, LinearLayout.LayoutParams(dp(34), dp(34)))
+    renameRow.addView(editName, LinearLayout.LayoutParams(dp(44), dp(44)))
     headingNames.addView(renameRow)
     if (remoteName != null && saved?.customName == true) {
         headingNames.addView(label(remoteName, 10f, muted = true).apply {
@@ -62,7 +62,7 @@ internal fun MainActivity.renderController() {
         contentDescription = "Atualizar dados do aparelho"
         setOnClickListener { refreshRemote(silent = false) }
     }
-    heading.addView(refresh, LinearLayout.LayoutParams(dp(38), dp(38)))
+    heading.addView(refresh, LinearLayout.LayoutParams(dp(44), dp(44)))
     heading.addView(View(this), LinearLayout.LayoutParams(dp(6), 1))
     val details = android.widget.ImageView(this).apply {
         setImageResource(br.dev.monitorremoto.R.drawable.ic_info)
@@ -77,7 +77,7 @@ internal fun MainActivity.renderController() {
             else showAppNotice("Detalhes", "Atualize o aparelho para obter as informações remotas.")
         }
     }
-    heading.addView(details, LinearLayout.LayoutParams(dp(38), dp(38)))
+    heading.addView(details, LinearLayout.LayoutParams(dp(44), dp(44)))
     heading.addView(View(this), LinearLayout.LayoutParams(dp(6), 1))
     currentConnectButton = actionButton("Desconectar") {
         when (effectiveConnectionState()) {
@@ -85,7 +85,7 @@ internal fun MainActivity.renderController() {
             else -> showConnectionChooser()
         }
     }.apply { textSize = 10.5f; minWidth = 0; setPadding(dp(2), 0, dp(2), 0) }
-    heading.addView(currentConnectButton, LinearLayout.LayoutParams(dp(92), dp(38)))
+    heading.addView(currentConnectButton, LinearLayout.LayoutParams(dp(92), dp(44)))
     card.addView(heading)
     sectionGap(card, 6)
     val statusRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }

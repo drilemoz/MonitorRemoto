@@ -16,7 +16,7 @@ assert match, "versionName ausente"
 version = match.group(1)
 code = re.search(r'\bversionCode\s*=\s*(\d+)', gradle)
 assert code, "versionCode ausente"
-assert version == "0.1.0-alpha.102" and code.group(1) == "102", "Versões incompatíveis"
+assert version == "0.1.0-alpha.104" and code.group(1) == "104", "Versões incompatíveis"
 appver = (root / 'app/src/main/java/br/dev/monitorremoto/transport/AppVersion.kt').read_text()
 assert f'const val NAME = "{version}"' in appver, "AppVersion fora de sincronia com o Gradle"
 assert 'AppVersion.NAME' in ui, "Tela de versão desatualizada"
@@ -1461,3 +1461,34 @@ assert 'getButton(AlertDialog.BUTTON_POSITIVE)' in dialog102 and 'setLayout(' in
 assert (root/'app/src/main/res/drawable/ic_search.xml').is_file()
 assert 'LocationShareService.stop(this)' in screen102
 print('PASSOU: alpha.102 Configurações, permissões reais, GPS e diálogos compartilhados.')
+
+# Alpha.103: evitar reconstrução e ticks duplicados na tela monitorada.
+main103 = (ui_root / 'MainActivity.kt').read_text(encoding='utf-8')
+mon103 = (ui_root / 'MonitorScreenUi.kt').read_text(encoding='utf-8')
+pulse103 = (ui_root / 'MonitorUiPulseUi.kt').read_text(encoding='utf-8')
+policy103 = (ui_root / 'MonitorUiRefreshPolicy.kt').read_text(encoding='utf-8')
+settings103 = (ui_root / 'SettingsHubUi.kt').read_text(encoding='utf-8')
+conn103 = (ui_root / 'ConnectionScreenUi.kt').read_text(encoding='utf-8')
+assert 'internal fun MainActivity.refreshMonitorIfChanged()' in pulse103 and 'MonitorUiRefreshPolicy.needsRender(' in pulse103
+assert 'if (!refreshMonitorIfChanged()) handler.postDelayed(this, 5_000L)' in pulse103
+assert 'displayedMonitorState = currentMonitorState()' in main103
+assert 'handler.postDelayed(refresh, 180L)' in pulse103 and 'monitorAccessListener(monitorUiInvalidation)' in main103
+assert 'handler.removeCallbacks(monitorUiInvalidation)' in main103
+assert 'AuthenticatedAccess.recent()' in pulse103 and 'recentClients: List<String>' in policy103
+assert 'val latest = AuthenticatedAccess.recent().firstOrNull' in mon103
+assert 'settingSearchIndex' in settings103 and 'search.postDelayed(pendingSearch, 120L)' in settings103
+assert 'search.removeCallbacks(pendingSearch)' in settings103 and 'if (s.isNullOrEmpty()) update("")' in settings103
+assert 'dp(44)' in conn103
+assert (root / 'app/src/test/java/br/dev/monitorremoto/ui/MonitorUiRefreshPolicyTest.kt').exists()
+print('PASSOU: alpha.103 invalidacao de UI, temporizador unico, pesquisa adiada e alvo de toque ampliado.')
+
+# alpha.104: sockets e sessões antigas devem ser encerrados ao reiniciar o servidor.
+monitor_service = (root / 'app/src/main/java/br/dev/monitorremoto/service/MonitorService.kt').read_text()
+manager104 = (root / 'app/src/main/java/br/dev/monitorremoto/ui/RemoteConnectionManager.kt').read_text()
+access_window = (root / 'app/src/main/java/br/dev/monitorremoto/transport/AccessAlertWindow.kt').read_text()
+assert 'acceptedSockets.add(peer)' in server and 'acceptedSockets.forEach' in server and 'workers.shutdownNow()' in server
+assert 'AccessAlertWindow()' in monitor_service and 'accessAlerts.observe' in monitor_service
+assert 'seen.retainAll(active)' in access_window and 'seen.add(session)' in access_window
+assert 'MessageDigest.isEqual(it, expected)' in manager104 and 'keyStillMatches(host, key)' in manager104 and 'state = "idle"' in manager104
+assert (root / 'app/src/test/java/br/dev/monitorremoto/transport/AccessAlertWindowTest.kt').exists()
+print('PASSOU: sockets encerrados, alertas de acesso limitados e resposta antiga de chave rejeitada')

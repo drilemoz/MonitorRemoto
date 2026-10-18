@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import java.security.MessageDigest
 import br.dev.monitorremoto.core.RecentDevices
 import br.dev.monitorremoto.transport.RemoteClient
 import org.json.JSONObject
@@ -37,6 +38,9 @@ internal class RemoteConnectionManager(context: Context) {
     /** Tempo real da última requisição completada, não idade dos dados remotos. */
     var lastRoundTripMs: Long? = null
         private set
+
+    private fun keyStillMatches(host: String, expected: ByteArray): Boolean =
+        RecentDevices.key(appContext, host)?.let { MessageDigest.isEqual(it, expected) } == true
 
     fun effectiveState(host: String): String =
         if (host.isBlank() || RecentDevices.key(appContext, host) == null) "idle" else state
@@ -92,7 +96,7 @@ internal class RemoteConnectionManager(context: Context) {
             val result = runCatching { RemoteClient.snapshot(host, key, appContext, accessMethod, true) }
             main.post {
                 if (cachedHost == host && br.dev.monitorremoto.core.SettingsStore.getRemoteHost(appContext) == host)
-                    onComplete(result)
+                    onComplete(if (keyStillMatches(host, key)) result else Result.failure(IllegalStateException("Pareamento alterado durante a consulta.")))
             }
         }
     }
@@ -110,7 +114,8 @@ internal class RemoteConnectionManager(context: Context) {
             val result = runCatching { RemoteClient.messageCommand(host, key, appContext,
                 accessMethod, operation, recipient, text, subscriptionId) }
             main.post {
-                if (cachedHost == host && br.dev.monitorremoto.core.SettingsStore.getRemoteHost(appContext) == host) onComplete(result)
+                if (cachedHost == host && br.dev.monitorremoto.core.SettingsStore.getRemoteHost(appContext) == host)
+                    onComplete(if (keyStillMatches(host, key)) result else Result.failure(IllegalStateException("Pareamento alterado durante o envio.")))
             }
         }
     }
@@ -129,7 +134,8 @@ internal class RemoteConnectionManager(context: Context) {
                 action, seconds, confirmation) }
             main.post {
                 if (state == "connected" && cachedHost == host &&
-                    br.dev.monitorremoto.core.SettingsStore.getRemoteHost(appContext) == host) onComplete(response)
+                    br.dev.monitorremoto.core.SettingsStore.getRemoteHost(appContext) == host)
+                    onComplete(if (keyStillMatches(host, key)) response else Result.failure(IllegalStateException("Pareamento alterado durante o comando.")))
             }
         }
     }
@@ -166,7 +172,25 @@ internal class RemoteConnectionManager(context: Context) {
                 fetching = false
                 fetchingHost = ""
                 lastRoundTripMs = (SystemClock.elapsedRealtime() - startElapsed).coerceAtLeast(0L)
-                if (!stillVisible()) return@post
+                if (!stillVisible()) {
+                    // Não deixar a tela marcada como "conectando" ao retornar do segundo plano.
+                    state = "idle"
+                    return@post
+                }
+                if (!keyStillMatches(host, key)) {
+                    // Pareamento removido/substituído durante a solicitação: nunca aceitar
+                    // telemetria ou habilitar comandos usando a resposta da chave anterior.
+                    state = "idle"
+                    message = "O pareamento mudou. Conecte novamente."
+                    issue = null
+                    if (cachedHost == host) {
+                        cached = null
+                        cachedHost = ""
+                        lastSuccessMs = 0L
+                    }
+                    onUpdate(true, null)
+                    return@post
+                }
                 response.onSuccess { snapshot ->
                     lastSuccessMs = System.currentTimeMillis()
                     cached = snapshot

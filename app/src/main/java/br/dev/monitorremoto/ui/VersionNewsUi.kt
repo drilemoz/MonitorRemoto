@@ -15,9 +15,9 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "Bem-vindo à atualização"))
     sectionGap(layout, 10)
     val entries = listOf(
-        "Configurações mais claras" to "Tela sem título repetido, categorias compactas e busca com limpeza rápida.",
-        "Permissões do Android" to "Estado local de câmera, GPS e notificações, com acesso direto às respectivas opções.",
-        "Diálogos atualizados" to "Nova escolha visual do perfil GPS, janelas responsivas e botões consistentes."
+        "Conexões mais estáveis" to "Ao reiniciar a escuta, o serviço encerra sockets antigos e suas operações pendentes.",
+        "Acessos recentes sem acúmulo" to "O histórico de alerta mantém só sessões atuais, evitando crescer com horas de monitoramento.",
+        "Pareamento protegido" to "Respostas atrasadas de uma chave removida ou trocada não são mais aceitas pelo controlador."
     )
     entries.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))

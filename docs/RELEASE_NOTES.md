@@ -1,3 +1,18 @@
+# Monitor Remoto v0.1.0-alpha.104 · Estabilidade de conexão
+
+- Recuperação do listener fecha sockets em execução e enfileirados.
+- Janela de notificações de acesso restringe o estado em memória aos acessos autenticados ainda recentes.
+- Respostas recebidas de chave removida ou alterada não atualizam o controlador.
+- Regressões locais adicionadas; build Android e testes reais em dois celulares pendentes.
+
+# Monitor Remoto v0.1.0-alpha.103 · Desempenho e acabamento
+
+- Modo Monitorado mantém rolagem e cartões estáveis nas consultas em que nada mudou, reduzindo atualizações desnecessárias de layout.
+- Corrigida a dupla programação do ciclo de atualização de estado de 5 s e agrupados eventos autenticados consecutivos sem perder a expiração dos acessos.
+- Busca de Configurações responde com índice local e atualizações agrupadas (120 ms), sem modificar autorizações; limpar busca responde imediatamente.
+- Botões de conexão com áreas de toque maiores e sem alteração de comandos.
+- Mesma versão exigida nos dois aparelhos. Testes estáticos locais não substituem compilação e medição reais no Android.
+
 # Monitor Remoto v0.1.0-alpha.102 · Configurações e diálogos
 
 - Índice de configurações compacto, sem título duplicado, com ícones, contagem de resultados e busca que pode ser limpa com um toque.

@@ -84,25 +84,19 @@ class MainActivity : Activity() {
     // Tempo monotônico em RAM da última tentativa de retomar o serviço autorizado.
     // Não sobreviver à Activity evita aplicar um timestamp antigo após recriação.
     private var lastRecoveryAttemptMs = 0L
+    // Mantém o conteúdo e a posição de rolagem intactos quando nenhum estado mudou.
+    internal var displayedMonitorState: MonitorUiRefreshPolicy.State? = null
+    private var firstResume = true
+    private val monitorUiInvalidation = Runnable {
+        if (active && !isFinishing && !isDestroyed && mode == 0) refreshMonitorIfChanged()
+    }
+
     internal var resultBox: LinearLayout? = null
     companion object { const val EXTRA_OPEN_MONITOR = "br.dev.monitorremoto.OPEN_MONITOR" }
     // Alpha.53: acesso autenticado permanece visível no cartão Monitorado e na
     // notificação do sistema; nunca abre Activity por cima das tarefas do usuário.
-    private val incomingListener: () -> Unit = {
-        handler.post {
-            if (active && !isFinishing && !isDestroyed && mode == 0) render()
-        }
-    }
-
-    private val monitorStatusPoll = object : Runnable {
-        override fun run() {
-            if (active && mode == 0) {
-                if (SettingsStore.isMonitorEnabled(this@MainActivity) && !MonitorService.isServiceActive) recoverAuthorizedServiceIfStopped()
-                render()
-                handler.postDelayed(this, 5_000L) // Time out stale activity on screen.
-            }
-        }
-    }
+    private val incomingListener: () -> Unit = monitorAccessListener(monitorUiInvalidation)
+    private val monitorStatusPoll = monitorStatusPoller { recoverAuthorizedServiceIfStopped() }
     internal var currentStatus: TextView? = null
     internal var currentDeviceTitle: TextView? = null
     internal var currentUpdated: TextView? = null
@@ -164,6 +158,9 @@ class MainActivity : Activity() {
     override fun onDestroy() {
         activeUiDialog?.dismiss()
         activeUiDialog = null
+        handler.removeCallbacks(monitorUiInvalidation)
+        handler.removeCallbacks(monitorStatusPoll)
+        handler.removeCallbacks(poller)
         if (mode == 4) clearRemoteMessagesScreen()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             systemBackCallback?.let { onBackInvokedDispatcher.unregisterOnBackInvokedCallback(it) }
@@ -184,7 +181,8 @@ class MainActivity : Activity() {
         super.onResume()
         active = true
         AuthenticatedAccess.subscribe(incomingListener)
-        render()
+        // A primeira renderização já ocorreu no onCreate; evitar montar tudo duas vezes.
+        if (firstResume) firstResume = false else render()
         recoverAuthorizedServiceIfStopped()
         if (mode == 4) loadRemoteMessages()
         handler.removeCallbacks(monitorStatusPoll)
@@ -218,6 +216,7 @@ class MainActivity : Activity() {
         AuthenticatedAccess.unsubscribe(incomingListener)
         handler.removeCallbacks(monitorStatusPoll)
         handler.removeCallbacks(poller)
+        handler.removeCallbacks(monitorUiInvalidation)
         // Uma resposta anterior não significa que ainda haja conexão ao voltar ao app.
         if ((mode == 1 || mode == 4) && remoteConnection.state == "connected") {
             remoteConnection.pause()
@@ -228,6 +227,7 @@ class MainActivity : Activity() {
 
     internal fun render() {
         content.removeAllViews()
+        if (mode != 0) displayedMonitorState = null
         if (mode == 4) { renderRemoteMessagesPage(); return }
         handler.removeCallbacks(monitorStatusPoll)
         if (active && mode == 0) handler.postDelayed(monitorStatusPoll, 5_000L)
@@ -278,6 +278,7 @@ class MainActivity : Activity() {
         }
         gap(20)
         addText("Somente em aparelhos próprios ou autorizados. Notificações permitidas são temporárias e filtradas.", 11f, muted = true)
+        if (mode == 0) displayedMonitorState = currentMonitorState()
     }
 
     /** Home retorna à escolha inicial, preservando serviço e chaves de pareamento. */

@@ -1,4 +1,4 @@
-# Monitor Remoto v0.1.0-alpha.102
+# Monitor Remoto v0.1.0-alpha.104
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,22 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.102 / versionCode 102** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.104 / versionCode 104** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Estabilidade de conexões e proteção de sessão (alpha.104)
+
+- O encerramento/reinício do listener fecha sockets em execução e aguardando, liberando transferências antigas e conexões pendentes; a fila continua limitada.
+- Notificações de acesso preservam o aviso de nova sessão autenticada, mas não acumulam milhares de identificadores de sessões expiradas em RAM.
+- No controlador, snapshots, mensagens e confirmações de comandos atrasados deixam de ser aceitos se a credencial pareada do host tiver sido removida ou trocada enquanto a resposta trafegava.
+- O aplicativo preserva todos os fluxos atuais de autorização local, câmera, GPS, rede e ADB. **Testes físicos e build completo ainda pendentes.**
+
+## Responsividade e economia de redesenhos (alpha.103)
+
+- O Modo Monitorado só reconstrói os cartões após alterações observáveis de serviço, transmissão, foto, câmera, IP local ou conjunto de aparelhos autenticados; consultas idênticas não deslocam o conteúdo rolado.
+- Uma notificação de atividade autenticada é agrupada por 180 ms, e o temporizador periódico agenda apenas um próximo ciclo, sem duplicar tarefas de interface. O prazo de expiração de 45 s permanece verificado a cada 5 s.
+- A busca de Configurações reutiliza um índice local, agrupa digitação rápida em 120 ms e limpa resultados imediatamente; não altera nenhuma preferência ao pesquisar.
+- Alvos de toque dos ícones de conexão/renomear e detalhes passaram a 44 dp. Nenhuma modificação em protocolos, captura, permissões ou frequência das consultas de rede.
+- As melhorias reduzem renderizações desnecessárias por projeto; não representam medições de desempenho ou consumo em aparelhos. Build completo e testes físicos pendentes.
 
 ## Configurações e diálogos padronizados (alpha.102)
 
@@ -457,6 +472,10 @@ Descoberta de dispositivos na LAN, reconexão ao mudar IP, permissões por categ
 
 Vide `docs/VALIDATION.md`. A presença do código não equivale a funcionalidade comprovada em hardware: executar build CI e ensaios com aparelhos reais antes de depender deste app.
 
+
+## Alterações alpha.104 · estabilidade de sessão
+
+- Encerramento de sockets antigos, alertas limitados e descarte de resposta de chave alterada.
 
 ## Alterações alpha.4 (versionCode 4)
 - QR Code local com segredo temporário (2 minutos, uso único), confirmação antes da conexão e armazenamento protegido da chave permanente.

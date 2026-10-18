@@ -192,13 +192,16 @@ private fun MainActivity.renderIncomingAccess() {
 }
 
 private fun MainActivity.showIncomingAccessActions(peer: AuthenticatedAccess.Peer) {
+    // O cartão pode permanecer na tela sem redesenhar a cada consulta. Buscar a
+    // atividade mais recente somente no momento em que o usuário abre os detalhes.
+    val latest = AuthenticatedAccess.recent().firstOrNull { it.key == peer.key } ?: peer
     val (wrapper, layout) = dialogWrapper()
     dialogIntro(layout, "Identidade e método declarados pelo cliente autenticado; não constituem verificação independente.")
-    layout.addView(dialogMetricRow("Nome informado", peer.name.ifBlank { "Não informado" }))
-    layout.addView(dialogMetricRow("IP de origem", peer.address))
-    layout.addView(dialogMetricRow("Método informado", peer.method))
-    layout.addView(dialogMetricRow("Último acesso", formatDate(peer.lastSeenMs)))
-    layout.addView(dialogMetricRow("Primeiro acesso", formatDate(peer.sinceMs)))
+    layout.addView(dialogMetricRow("Nome informado", latest.name.ifBlank { "Não informado" }))
+    layout.addView(dialogMetricRow("IP de origem", latest.address))
+    layout.addView(dialogMetricRow("Método informado", latest.method))
+    layout.addView(dialogMetricRow("Último acesso", formatDate(latest.lastSeenMs)))
+    layout.addView(dialogMetricRow("Primeiro acesso", formatDate(latest.sinceMs)))
     sectionGap(layout, 8)
     layout.addView(label("O acesso não é uma sessão TCP contínua. Interromper ou trocar a chave afeta todos os controladores.", 11f, muted = true))
     val dialog = themedPopup(this)

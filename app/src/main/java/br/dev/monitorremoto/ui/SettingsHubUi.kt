@@ -57,6 +57,13 @@ private val settingGroups = listOf(
 private fun folded(value: String): String = Normalizer.normalize(value, Normalizer.Form.NFD)
     .replace(Regex("\\p{M}+"), "").lowercase(Locale.ROOT).trim()
 
+// Evita normalizar a mesma lista de opções em cada caractere pesquisado.
+private val settingSearchIndex by lazy {
+    settingGroups.associate { group -> group.title to group.entries.associateWith { entry ->
+        folded("${group.title} ${entry.title} ${entry.hint}")
+    } }
+}
+
 /** Índice compacto e pesquisável, com estado verdadeiro das permissões locais. */
 internal fun MainActivity.renderSettingsHome() {
     val header = panel(14)
@@ -132,14 +139,17 @@ internal fun MainActivity.renderSettingsHome() {
     val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
     content.addView(results)
 
+    var renderedQuery: String? = null
     fun update(query: String) {
-        results.removeAllViews()
         val normalized = folded(query)
+        if (normalized == renderedQuery) return
+        renderedQuery = normalized
+        results.removeAllViews()
         clear.visibility = if (query.isNotBlank()) View.VISIBLE else View.GONE
         var count = 0
         settingGroups.forEach { group ->
             val matches = group.entries.filter { entry ->
-                normalized.isBlank() || folded("${group.title} ${entry.title} ${entry.hint}").contains(normalized)
+                normalized.isBlank() || settingSearchIndex[group.title]?.get(entry)?.contains(normalized) == true
             }
             if (matches.isEmpty()) return@forEach
             count += matches.size
@@ -200,10 +210,22 @@ internal fun MainActivity.renderSettingsHome() {
             addView(visualHeader(R.drawable.ic_search, "Nenhum resultado", "Tente buscar por GPS, câmera, notificações ou arquivos"))
         })
     }
+    // Atualização com 120 ms de pausa: evita destruir/recriar dezenas de Views
+    // em cada tecla, sem atrasar abertura das categorias ou o botão Limpar.
+    val pendingSearch = Runnable {
+        if (results.isAttachedToWindow) update(search.text?.toString().orEmpty())
+    }
     search.addTextChangedListener(object : TextWatcher {
         override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = update(s?.toString().orEmpty())
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+            search.removeCallbacks(pendingSearch)
+            if (s.isNullOrEmpty()) update("") else search.postDelayed(pendingSearch, 120L)
+        }
         override fun afterTextChanged(s: Editable?) = Unit
+    })
+    search.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+        override fun onViewAttachedToWindow(v: View) = Unit
+        override fun onViewDetachedFromWindow(v: View) { search.removeCallbacks(pendingSearch) }
     })
     update("")
 }

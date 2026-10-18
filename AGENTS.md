@@ -1,3 +1,16 @@
+# Monitor Remoto 0.1.0-alpha.104
+
+- A alpha.104 fecha todos os sockets aceitos ao parar/reiniciar o listener; manter cancelamento de tarefas e limite de fila, e não permitir respostas após troca/revogação da chave de pareamento.
+- `AccessAlertWindow` guarda apenas IDs das sessões recentes; preservar o aviso inicial, não alertar a cada requisição e manter memória limitada. Testes JVM em `AccessAlertWindowTest`.
+- Próxima versão alpha.105/versionCode 105, mesmo APK nos dois aparelhos. Confirmar Gradle/CI Android e teste de recuperação real antes de instalar.
+
+# Monitor Remoto 0.1.0-alpha.103
+
+- Alpha.103: a tela Monitorado redesenha somente quando `MonitorUiRefreshPolicy.State` muda; não agendar dois ticks de 5 segundos ao chamar `render()` de dentro de `monitorStatusPoll`.
+- O token visual de clientes ignora horário para não renderizar a cada consulta, MAS o acesso deve expirar após 45 segundos via `AuthenticatedAccess.recent()`; o diálogo busca último acesso fresco ao abrir. Não sugerir conexão TCP permanente.
+- A busca de Configurações faz debounce de 120 ms apenas para a apresentação; operações de configuração e limpeza manual continuam síncronas. Cancelar atualização pendente quando o campo sai da tela.
+- Preservar autenticação AES-GCM, autorização local para MediaProjection/Camera, parada, ADB pareado, privacidade e estrutura de arquivos. Próxima alpha.104 / versionCode 104, mesmo aplicativo nos dois aparelhos. Confirmar CI Android antes de instalar.
+
 # Monitor Remoto 0.1.0-alpha.102
 
 - Alpha.102 moderniza `SettingsHubUi.kt`, `SettingsScreenUi.kt`, `AppDialogUi.kt` e acrescenta `ic_search.xml`. Indicadores na página de Configurações mostram **somente permissões Android locais** e não significam serviços ativos ou compartilhamento remoto.

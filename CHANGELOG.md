@@ -1,3 +1,18 @@
+## 0.1.0-alpha.104 (versionCode 104) | 17/10/2026
+- Ao interromper ou recuperar o listener, fechar sockets TCP dos clientes em execução e aguardando na fila; evita manter transmissões antigas após a sessão ter sido encerrada.
+- Limitar o histórico de alertas de acesso às sessões autenticadas recentes, preservando aviso de novo acesso sem acumular identificadores antigos na RAM.
+- No controlador, ignorar snapshot recebido após remoção/troca da chave pareada e limpar o estado de carregamento ao sair da tela durante uma consulta.
+- Testes JVM adicionados para a janela de alertas, regressões estruturais e versão/documentação sincronizadas. Nenhum novo comando, permissão ou acesso remoto.
+- Build Android completo e ensaios em dois dispositivos continuam pendentes.
+
+## 0.1.0-alpha.103 (versionCode 103) | 17/10/2026
+- Reduzida a reconstrução periódica da interface do Modo Monitorado: assinatura de estado leve e redesenho apenas quando ocorrer alteração real nos indicadores de serviço, captura, IP ou clientes recentes. Isso evita reset de rolagem e processamento visual inútil.
+- Removida a duplicação involuntária do agendamento de atualização do Modo Monitorado, preservando a expiração de acessos em 45 s e a recuperação autorizada.
+- Atualizações de acesso autenticado agrupadas em 180 ms; detalhes de último acesso são consultados novamente somente ao abrir a janela.
+- Pesquisa de Configurações com normalização pré-calculada, debounce de 120 ms e cancelamento da atualização pendente ao sair da tela.
+- Aumentadas as áreas de toque de renomear, atualizar e detalhes de conexão a 44 dp; evitada a segunda reconstrução de tela na primeira abertura da Activity.
+- VersionName/versionCode e referências sincronizados. Sem alterações em autenticação, ADB, rede, GPS, câmera ou permissões. Build Android físico e CI ainda pendentes.
+
 ## 0.1.0-alpha.102 (versionCode 102) | 17/10/2026
 - Redesenhada a página Configurações sem cabeçalho duplicado: resumo real das permissões Android de localização, câmera e notificações, pesquisa com limpeza rápida e contador de resultados.
 - Modernizado o índice por categorias com seções compactas e separadores discretos, sem alterar roteamento ou autorizações locais.

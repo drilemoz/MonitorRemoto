@@ -18,6 +18,7 @@ import br.dev.monitorremoto.core.EventJournal
 import br.dev.monitorremoto.core.SettingsStore
 import br.dev.monitorremoto.security.SecretVault
 import br.dev.monitorremoto.transport.AuthenticatedAccess
+import br.dev.monitorremoto.transport.AccessAlertWindow
 import br.dev.monitorremoto.transport.MonitorServer
 import br.dev.monitorremoto.transport.PairingSession
 import br.dev.monitorremoto.ui.MainActivity
@@ -81,7 +82,7 @@ class MonitorService : Service() {
             mainHandler.postDelayed(this, 30_000L)
         }
     }
-    private val accessAlerts = mutableSetOf<String>()
+    private val accessAlerts = AccessAlertWindow()
     private var foregroundStarted = false
     private var lastNotificationSignature: String? = null
     private var lastControllerSeenMs = 0L
@@ -287,12 +288,12 @@ class MonitorService : Service() {
 
     private fun refreshAccessAlert() {
         val current = AuthenticatedAccess.recent()
-        val fresh = current.filter { accessAlerts.add("${it.key}:${it.sinceMs}") }
+        val fresh = accessAlerts.observe(current.map { "${it.key}:${it.sinceMs}" })
         if (current.isEmpty()) {
             (getSystemService(NotificationManager::class.java))?.cancel(ACCESS_NOTIFICATION_ID)
             return
         }
-        if (fresh.isEmpty()) return // no alert spam from 15-second polling
+        if (!fresh) return // alerta apenas quando aparece uma nova sessão de acesso
         if (Build.VERSION.SDK_INT >= 33 &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
         val launch = PendingIntent.getActivity(this, 44,

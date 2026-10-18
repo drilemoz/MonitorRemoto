@@ -39,6 +39,7 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
 import java.util.LinkedHashMap
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
@@ -57,6 +58,9 @@ class MonitorServer(private val context: Context) {
     )
     // Não deixar transferências longas ocupar os três workers simultaneamente.
     private val streamSlots = Semaphore(1, true)
+    // Inclui sockets aguardando na fila, não somente os workers em execução.
+    // Fechar todos ao parar evita respostas da sessão antiga após reiniciar o listener.
+    private val acceptedSockets = ConcurrentHashMap.newKeySet<Socket>()
     // Compartilhado entre instâncias: reiniciar o listener não reabre a janela de replay.
     private companion object {
         val seenNonces = LinkedHashMap<String, Long>()
@@ -74,9 +78,15 @@ class MonitorServer(private val context: Context) {
                 listener.use {
                     while (running) {
                         val peer = listener.accept()
+                        acceptedSockets.add(peer)
                         try {
-                            workers.execute { handle(peer) }
-                        } catch (_: Exception) { peer.close() }
+                            workers.execute {
+                                try { handle(peer) } finally { acceptedSockets.remove(peer) }
+                            }
+                        } catch (_: Exception) {
+                            acceptedSockets.remove(peer)
+                            runCatching { peer.close() }
+                        }
                     }
                 }
             } catch (_: SocketException) {
@@ -102,6 +112,10 @@ class MonitorServer(private val context: Context) {
         PairingSession.revoke()
         br.dev.monitorremoto.core.RemoteUploadStore.clear()
         try { server?.close() } catch (_: Exception) { }
+        // shutdownNow() não interrompe uma leitura bloqueada em SocketInputStream.
+        // Fechar também os sockets enfileirados e os que estão transmitindo dados.
+        acceptedSockets.forEach { socket -> runCatching { socket.close() } }
+        acceptedSockets.clear()
         workers.shutdownNow()
     }
 
