@@ -1,5 +1,7 @@
 package br.dev.monitorremoto.ui
 
+import br.dev.monitorremoto.R
+
 import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
@@ -63,33 +65,27 @@ class CameraShareActivity : Activity(), TextureView.SurfaceTextureListener {
     private lateinit var switchButton: Button
     private lateinit var remoteSwitchConsent: CheckBox
 
-    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
-    private fun button(text: String, action: () -> Unit) = Button(this).apply {
-        this.text = text
-        isAllCaps = false
-        setOnClickListener { action() }
-    }
+    private val skin by lazy { MonitorScreenSkin(this) }
+    private fun dp(v: Int) = skin.dp(v)
+    private fun button(text: String, action: () -> Unit) = skin.button(text, false, action)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        skin.applyWindow()
         val body = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.rgb(16, 23, 34))
-            setPadding(dp(14), dp(15), dp(14), dp(14))
+            setBackgroundColor(skin.background)
+            setPadding(dp(15), dp(12), dp(15), dp(15))
         }
-        val title = TextView(this).apply {
-            text = "Câmera compartilhada · autorização local"
-            textSize = 18f
-            setTextColor(Color.WHITE)
-        }
-        body.addView(title)
-        status = TextView(this).apply {
-            text = "Iniciando câmera…"
-            textSize = 13f
-            setTextColor(Color.LTGRAY)
-            setPadding(0, dp(7), 0, dp(12))
-        }
-        body.addView(status)
+        body.addView(skin.header(R.drawable.ic_remote_camera, "Câmera compartilhada", "Captura autorizada neste aparelho") { finish() },
+            LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
+        val summary = skin.card()
+        summary.addView(skin.badge("● CAPTURA LOCAL VISÍVEL", true), LinearLayout.LayoutParams(-2, -2).apply {
+            bottomMargin = dp(8)
+        })
+        status = skin.label("Iniciando câmera…", 12.5f)
+        summary.addView(status)
+        body.addView(summary, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(10) })
         preview = TextureView(this).apply { surfaceTextureListener = this@CameraShareActivity }
         body.addView(preview, LinearLayout.LayoutParams(-1, 0, 1f))
         val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
@@ -99,12 +95,14 @@ class CameraShareActivity : Activity(), TextureView.SurfaceTextureListener {
             openCamera()
         }
         actions.addView(switchButton, LinearLayout.LayoutParams(0, dp(52), 1f))
-        actions.addView(button("Parar e voltar") { finish() }, LinearLayout.LayoutParams(0, dp(52), 1f))
+        actions.addView(skin.button("Parar câmera", true) { finish() }, LinearLayout.LayoutParams(0, dp(52), 1f).apply {
+            leftMargin = dp(8)
+        })
         body.addView(actions)
         remoteSwitchConsent = CheckBox(this).apply {
             text = "Permitir troca frontal/traseira pelo controlador nesta sessão"
             textSize = 13f
-            setTextColor(Color.WHITE)
+            setTextColor(skin.foreground)
             isChecked = false
             setOnCheckedChangeListener { _, checked ->
                 allowSwitchThisSession = checked && authorized()
@@ -115,7 +113,7 @@ class CameraShareActivity : Activity(), TextureView.SurfaceTextureListener {
         body.addView(TextView(this).apply {
             text = "A câmera só transmite enquanto esta tela está aberta. Quadros JPEG em memória, sem microfone ou gravação. Voltar ou bloquear a tela encerra a captura."
             textSize = 12f
-            setTextColor(Color.LTGRAY)
+            setTextColor(skin.muted)
             setPadding(0, dp(6), 0, 0)
         })
         setContentView(body)

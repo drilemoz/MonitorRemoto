@@ -437,24 +437,20 @@ class RemoteCatalogActivity : Activity() {
 
     private fun showAppDetails(item: JSONObject, lastObserved: String?) {
         val pkg = item.optString("package")
-        val name = item.optString("name")
-        val observed = if (lastObserved == pkg) "Último aplicativo observado (não comprova execução atual)"
-            else "Execução não confirmada"
-        val options = arrayOf("Abrir aplicativo", "Forçar parada via ADB", "Configurações via ADB",
-            if (isFavorite(pkg)) "Remover dos favoritos" else "Adicionar aos favoritos")
-        themedPopup(this)
-            .setTitle(name.ifBlank { pkg })
-            .setMessage("Pacote: $pkg\n$observed")
-            .setItems(options) { _, which ->
-                when (which) {
-                    0 -> openApp(pkg)
-                    1 -> stopApp(pkg)
-                    2 -> adbApp(pkg, "settings")
-                    3 -> toggleFavorite(pkg)
-                }
-            }
-            .setNegativeButton("Fechar", null)
-            .show()
+        val name = item.optString("name").ifBlank { pkg }
+        val observed = if (lastObserved == pkg) "Último observado · não comprova execução atual"
+            else "Execução atual não confirmada"
+        showMonitorActionSheet(name, "$pkg\n$observed", listOf(
+            MonitorSheetAction(android.R.drawable.ic_media_play, "Abrir aplicativo",
+                "Sujeito à autorização no monitorado") { openApp(pkg) },
+            MonitorSheetAction(android.R.drawable.ic_menu_close_clear_cancel, "Forçar parada via ADB",
+                "Exige sessão e confirmação ADB", true) { stopApp(pkg) },
+            MonitorSheetAction(android.R.drawable.ic_menu_manage, "Configurações via ADB",
+                "Abrir detalhes do aplicativo remoto") { adbApp(pkg, "settings") },
+            MonitorSheetAction(android.R.drawable.btn_star_big_on,
+                if (isFavorite(pkg)) "Remover dos favoritos" else "Adicionar aos favoritos",
+                "Preferência somente deste controlador") { toggleFavorite(pkg) }
+        ))
     }
 
     private fun openApp(packageName: String) {

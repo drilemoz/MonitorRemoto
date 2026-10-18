@@ -16,7 +16,7 @@ assert match, "versionName ausente"
 version = match.group(1)
 code = re.search(r'\bversionCode\s*=\s*(\d+)', gradle)
 assert code, "versionCode ausente"
-assert version == "0.1.0-alpha.94" and code.group(1) == "94", "Versões incompatíveis"
+assert version == "0.1.0-alpha.98" and code.group(1) == "98", "Versões incompatíveis"
 appver = (root / 'app/src/main/java/br/dev/monitorremoto/transport/AppVersion.kt').read_text()
 assert f'const val NAME = "{version}"' in appver, "AppVersion fora de sincronia com o Gradle"
 assert 'AppVersion.NAME' in ui, "Tela de versão desatualizada"
@@ -1287,17 +1287,21 @@ assert 'FixedDownloadsFolder.ensure(applicationContext)' in service89
 assert 'ACTION_OPEN_DOCUMENT_TREE' not in settings89
 assert 'copyBatchDownloads(chosen)' in activity89 and 'copyRemoteFolderDownloads' in activity89
 assert 'publishStaged(part, item' in activity89 and 'confirmBatchDelete' in activity89
-assert (ui_root / 'ThemedPopup.kt').exists() and 'setGravity(Gravity.BOTTOM)' in activity89
+assert (ui_root / 'ThemedPopup.kt').exists() and 'setGravity(Gravity.BOTTOM)' in (ui_root / 'MonitorActionSheet.kt').read_text()
 assert 'tiles.chunked(3)' in dashboard88
 print('PASSOU: alpha.89 Downloads fixos de propriedade do app, operações autenticadas e menus modernos.')
 
-# Alpha.90: previne regressão de compilação do menu inferior (workflow #82).
+# Alpha.90/95: o menu agora usa a folha visual compartilhada, com dialog local
+# nao nulo, ScrollView limitada e fechamento antes do callback de operacao.
 files90 = (ui_root / 'RemoteFilesActivity.kt').read_text()
-assert 'val scroll = ScrollView(this).apply {' in files90 and 'addView(holder)' in files90, 'Menu sem ScrollView local'
-assert 'val dialog = modernBuilder().setView(scroll).create()' in files90, 'Dialog deve ter tipo nao-nulo'
-assert 'dialog.show()' in files90 and 'dialog.window?.apply' in files90, 'Acesso indevido a AlertDialog?'
-assert 'menu = modernBuilder().setView(scroll).create()' not in files90, 'Regressao: smart cast de var mutavel nullable'
-print('PASSOU: alpha.90 menu de arquivos com ScrollView criada e AlertDialog nao-nulo.')
+sheet95 = (ui_root / 'MonitorActionSheet.kt').read_text()
+assert 'showMonitorActionSheet(name,' in files90
+assert 'val scroll = ScrollView(this).apply' in sheet95 and 'scroll.addView(options)' in sheet95
+assert 'dialog = themedPopup(this).setView(content).create()' in sheet95
+assert 'dialog.show()' in sheet95 and 'dialog.dismiss(); item.invoke()' in sheet95
+assert 'setGravity(Gravity.BOTTOM)' in sheet95 and 'setLayout(WindowManager.LayoutParams.MATCH_PARENT' in sheet95
+assert 'menu = modernBuilder().setView(scroll).create()' not in files90
+print('PASSOU: alpha.95 folha contextual rolavel com dialog nao nulo e fechamento seguro.')
 
 # Alpha.91: temperatura privada apenas sob demanda, ADB TLS vinculado ao IP salvo.
 thermal = (root / 'app/src/main/java/br/dev/monitorremoto/core/ThermalDiagnostics.kt').read_text()
@@ -1341,3 +1345,55 @@ assert "MonitorDialogDark" in theme and "MonitorDialogLight" in theme
 assert (root / "app/src/main/res/values/monitor_dialog_styles.xml").exists()
 assert "setBackgroundDrawableResource(android.R.color.transparent)" in maintenance
 print("PASSOU: alpha.94 identidade visual, manutenção e segurança de ações preservadas")
+
+# Alpha.95: componentes contextuais usados em tres superficies, sem mudar regras remotas.
+sheet95 = (ui_root / "MonitorActionSheet.kt").read_text()
+files95 = (ui_root / "RemoteFilesActivity.kt").read_text()
+apps95 = (ui_root / "RemoteCatalogActivity.kt").read_text()
+settings95 = (ui_root / "SettingsHubUi.kt").read_text()
+assert 'internal data class MonitorSheetAction(' in sheet95
+assert 'require(actions.isNotEmpty() && actions.size <= 40)' in sheet95
+assert 'item.destructive' in sheet95 and 'item.invoke()' in sheet95
+assert all(x in files95 for x in ['showMonitorActionSheet(name,', 'showMonitorActionSheet("Ordenar arquivos"', 'showMonitorActionSheet("Downloads interrompidos"'])
+assert 'confirmBatchDelete(listOf(item))' in files95 and 'confirmBatchTrash(listOf(item))' in files95
+assert 'showMonitorActionSheet(name, "$pkg' in apps95 and 'stopApp(pkg)' in apps95
+assert 'visualHeader(R.drawable.ic_settings' in settings95 and 'openSettingsSection(item.section)' in settings95
+print("PASSOU: alpha.95 menus, navegação e confirmação sensível preservados.")
+
+# Alpha.96: modernização em telas especializadas sem modificar o transporte.
+skin96 = (ui_root / "MonitorScreenSkin.kt").read_text()
+assert 'internal class MonitorScreenSkin' in skin96
+assert all(term in skin96 for term in ['fun header(', 'fun badge(', 'fun button(', 'fun card(', 'fun applyWindow()'])
+for name in ("RemotePhotoActivity.kt", "RemotePhotoSetupActivity.kt", "RemoteCameraActivity.kt", "CameraShareActivity.kt", "RemoteLocationActivity.kt"):
+    code96 = (ui_root / name).read_text()
+    assert 'MonitorScreenSkin(this)' in code96, name
+    assert 'skin.header(R.drawable.' in code96, name
+assert 'PhotoReadyService.stop(this)' in (ui_root / 'RemotePhotoSetupActivity.kt').read_text()
+assert 'finish()' in (ui_root / 'CameraShareActivity.kt').read_text()
+assert 'LocationUiPolicy.refreshDelayMs' in (ui_root / 'RemoteLocationActivity.kt').read_text()
+print('PASSOU: alpha.96 kit de telas, câmeras, foto, localização e autorizações preservadas.')
+
+# Alpha.97: telas de captura, SMS e notificações continuam protegidas após reforma visual.
+screen97=(ui_root / 'RemoteScreenActivity.kt').read_text()
+messages97=(ui_root / 'RemoteMessagesUi.kt').read_text()
+assert 'skin.header(R.drawable.ic_remote_phone' in screen97
+assert 'val connectionCard = skin.card()' in screen97
+assert all(t in screen97 for t in ['saveQuickFrame()', 'toggleFullscreen()', 'updateStreamButtons()', 'remoteCommand("tap"', 'screenRoot.requestApplyInsets()'])
+assert 'Dados temporários · códigos sensíveis filtrados' in messages97
+assert 'visualDialogContainer()' in messages97 and 'Revisar envio' in messages97
+assert 'showAppConfirm("Confirmar envio remoto?"' in messages97
+assert 'MessagePolicy.looksLikeAuthenticationSms' in messages97 and 'SensitiveContent.isSensitive' in messages97
+assert 'settingsBad' not in messages97
+print('PASSOU: alpha.97 captura autorizada, SMS/alertas filtrados e dupla confirmação preservadas.')
+
+# Alpha.98: reutilização do kit visual sem alterar pareamento, ADB ou callbacks sensíveis.
+connection98=(ui_root/'ConnectionScreenUi.kt').read_text()
+pairing98=(ui_root/'PairingScreenUi.kt').read_text()
+details98=(ui_root/'RemoteDetailsActivity.kt').read_text()
+adb98=(ui_root/'AdbActivity.kt').read_text()
+assert 'currentStatus = label' in connection98 and 'background = shape(fieldColor, 99, true)' in connection98
+assert all(x in pairing98 for x in ['startQrScanner()', 'showManualConnectionDialog()', 'connectSavedDevice(item)', 'forgetSavedDevice(item)'])
+assert 'skin.header(R.drawable.ic_info' in details98 and 'window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)' in details98
+assert 'skin.header(R.drawable.ic_phone' in adb98
+assert all(x in adb98 for x in ['AdbPolicy.newQr(', 'openViewerWithAdb()', 'showMaintenance()', 'showPendingAppAction()', 'disconnect()', 'showControls()'])
+print('PASSOU: alpha.98 conexão, pareamento, detalhes e ADB visualmente padronizados.')

@@ -15,11 +15,10 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "Bem-vindo à atualização"))
     sectionGap(layout, 10)
     val entries = listOf(
-        "Visual do aplicativo" to "Novo kit de componentes compartilhados com ícones, cartões compactos e estados coerentes.",
-        "Energia e manutenção" to "Diálogo central redesenhado com ações claras e indicação de quando o ADB é necessário.",
-        "Confirmações" to "Avisos e ações críticas com cabeçalhos, rodapé e cores próprios para cada tipo de ação.",
-        "Tema claro e escuro" to "Diálogos arredondados com cores e contrastes consistentes nos dois temas.",
-        "Segurança preservada" to "Nenhuma mudança nas autorizações remotas ou na confirmação do ADB."
+        "Conexão" to "Estado compacto e última resposta mais fáceis de reconhecer no painel remoto.",
+        "Pareamento" to "QR Code, conexão manual e aparelhos salvos com apresentação mais clara.",
+        "Detalhes" to "Resumo da última consulta, cabeçalho com ícone e seções técnicas organizadas.",
+        "ADB" to "Cabeçalho e cartões renovados, sem mudar pareamento nem confirmações críticas."
     )
     entries.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))

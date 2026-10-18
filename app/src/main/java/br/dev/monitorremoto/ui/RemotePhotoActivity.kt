@@ -1,5 +1,7 @@
 package br.dev.monitorremoto.ui
 
+import br.dev.monitorremoto.R
+
 import android.app.Activity
 import android.content.ClipData
 import android.content.Intent
@@ -56,31 +58,17 @@ class RemotePhotoActivity : Activity() {
     private lateinit var share: Button
     private lateinit var lens: Button
     private lateinit var reset: Button
-    private val isDark get() = when (SettingsStore.theme(this)) {
-        "dark" -> true
-        "system" -> resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-        else -> false
-    }
-    private val bg get() = if (isDark) Color.rgb(14, 23, 36) else Color.rgb(247, 249, 252)
-    private val surface get() = if (isDark) Color.rgb(28, 40, 55) else Color.WHITE
-    private val ink get() = if (isDark) Color.WHITE else Color.rgb(29, 42, 60)
-    private val muted get() = if (isDark) Color.rgb(171, 184, 199) else Color.rgb(98, 114, 130)
-    private val accent = Color.rgb(36, 110, 197)
-    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
-    private fun shape(color: Int, radius: Int = 15) = GradientDrawable().apply {
-        setColor(color); cornerRadius = dp(radius).toFloat()
-    }
-    private fun label(value: String, size: Float, bold: Boolean = false) = TextView(this).apply {
-        text = value; textSize = size; setTextColor(if (bold) ink else muted)
-        if (bold) setTypeface(null, Typeface.BOLD)
-    }
-    private fun action(value: String, highlighted: Boolean = false, click: () -> Unit) = Button(this).apply {
-        text = value; isAllCaps = false; textSize = 13f; minHeight = dp(50)
-        setTextColor(if (highlighted) Color.WHITE else ink)
-        background = shape(if (highlighted) accent else surface, 13)
-        elevation = 0f; stateListAnimator = null
-        setOnClickListener { click() }
-    }
+    private val skin by lazy { MonitorScreenSkin(this) }
+    private val bg get() = skin.background
+    private val surface get() = skin.surface
+    private val ink get() = skin.foreground
+    private val muted get() = skin.muted
+    private val accent get() = skin.accent
+    private fun dp(v: Int) = skin.dp(v)
+    private fun shape(color: Int, radius: Int = 15) = skin.rounded(color, radius)
+    private fun label(value: String, size: Float, bold: Boolean = false) = skin.label(value, size, bold)
+    private fun action(value: String, highlighted: Boolean = false, click: () -> Unit) =
+        skin.button(value, highlighted, click)
     private fun row(parent: LinearLayout, vararg buttons: Button) {
         val container = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         buttons.forEachIndexed { i, button ->
@@ -100,47 +88,41 @@ class RemotePhotoActivity : Activity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = bg; window.navigationBarColor = bg
-        @Suppress("DEPRECATION")
-        window.decorView.systemUiVisibility = if (isDark) 0 else
-            View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        skin.applyWindow()
         val body = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(bg)
             setPadding(dp(14), dp(10), dp(14), dp(12))
             fitsSystemWindows = true
         }
-        val heading = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        val back = action("‹ Voltar") { finish() }
-        heading.addView(back, LinearLayout.LayoutParams(dp(91), dp(50)))
-        val title = label("Foto remota", 21f, true).apply { setPadding(dp(14), 0, 0, 0) }
-        heading.addView(title)
-        body.addView(heading)
         val host = intent.getStringExtra(EXTRA_HOST).orEmpty()
         val alias = RecentDevices.list(this).firstOrNull { it.host == host }?.name ?: "Aparelho monitorado"
-        body.addView(label(alias, 12f).apply { setPadding(dp(3), dp(4), 0, dp(9)) })
-        val indicator = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            background = shape(surface)
-            setPadding(dp(12), dp(11), dp(12), dp(11))
-        }
+        body.addView(skin.header(R.drawable.ic_remote_camera, "Fotografia remota", alias) { finish() },
+            LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
+        val indicator = skin.card()
         status = label("Pronto para solicitar uma fotografia", 14f, true)
         detail = label("A sessão de câmera deve estar armada no monitorado.", 12f)
         progress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
             isIndeterminate = true; visibility = View.GONE; indeterminateTintList = android.content.res.ColorStateList.valueOf(accent)
         }
+        indicator.addView(skin.badge("● FOTO ÚNICA · SEM VÍDEO", true), LinearLayout.LayoutParams(-2, -2).apply {
+            bottomMargin = dp(10)
+        })
         indicator.addView(status)
         indicator.addView(detail, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(4) })
         indicator.addView(progress, LinearLayout.LayoutParams(-1, dp(3)).apply { topMargin = dp(9) })
         body.addView(indicator)
 
-        val previewCard = FrameLayout(this).apply { background = shape(Color.rgb(8, 13, 23)); clipToOutline = true }
+        val previewCard = FrameLayout(this).apply {
+            background = shape(if (skin.background == Color.rgb(14, 23, 35)) Color.rgb(7, 13, 22) else Color.rgb(30, 44, 58), 21)
+            clipToOutline = true
+        }
         photo = PhotoZoomView(this).apply {
             contentDescription = "Prévia da última fotografia recebida. Aproxime com dois dedos, arraste e toque duas vezes para alternar zoom."
         }
         previewCard.addView(photo, FrameLayout.LayoutParams(-1, -1))
         empty = TextView(this).apply {
-            text = "📷\n\nNenhuma foto recebida\nToque em Tirar foto para capturar uma imagem"
+            text = "▣\n\nAguardando fotografia\nToque em Tirar foto para solicitar um JPEG"
             textSize = 14f; setTextColor(Color.LTGRAY); gravity = Gravity.CENTER
             setPadding(dp(16), 0, dp(16), 0)
         }

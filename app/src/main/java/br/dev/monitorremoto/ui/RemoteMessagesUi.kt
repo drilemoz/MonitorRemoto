@@ -147,7 +147,8 @@ private fun MainActivity.messageRow(parent: LinearLayout, caption: String, body:
     val row = LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
-        setPadding(0, dp(9), 0, dp(9))
+        background = shape(fieldColor, 15, true)
+        setPadding(dp(11), dp(10), dp(9), dp(10))
     }
     val texts = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
     texts.addView(label(if (isNew) "● NOVA · $caption" else caption, 10.5f, muted = true).apply {
@@ -169,7 +170,7 @@ private fun MainActivity.messageRow(parent: LinearLayout, caption: String, body:
         actions.addView(messageTextAction("Responder", reply))
     }
     row.addView(actions)
-    parent.addView(row)
+    parent.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(7) })
 }
 
 /** Tela completa, sem AlertDialog nem botões largos para cada mensagem. */
@@ -179,18 +180,29 @@ internal fun MainActivity.renderRemoteMessagesPage() {
         gravity = Gravity.CENTER_VERTICAL
     }
     top.addView(headerIconButton(R.drawable.ic_back, "Voltar ao controle") { closeRemoteMessagesScreen() },
-        LinearLayout.LayoutParams(dp(44), dp(44)))
-    top.addView(View(this), LinearLayout.LayoutParams(dp(10), 1))
-    val titles = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-    titles.addView(label("MENSAGENS", 18f, strong = true))
-    titles.addView(label("SMS e notificações autorizadas", 11f, muted = true))
-    top.addView(titles, LinearLayout.LayoutParams(0, -2, 1f))
+        LinearLayout.LayoutParams(dp(48), dp(48)))
+    val words = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(9), 0, 0, 0) }
+    words.addView(label("Mensagens", 21f, strong = true))
+    words.addView(label("SMS e alertas autorizados", 11.5f, muted = true))
+    top.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
     val refresh = headerIconButton(R.drawable.ic_refresh, "Atualizar mensagens") { loadRemoteMessages() }
     refresh.isEnabled = !messagesLoading
     refresh.alpha = if (messagesLoading) 0.4f else 1f
-    top.addView(refresh, LinearLayout.LayoutParams(dp(44), dp(44)))
+    top.addView(refresh, LinearLayout.LayoutParams(dp(48), dp(48)))
     content.addView(top)
-    sectionGap(content, 14)
+    sectionGap(content, 12)
+    val info = panel(14).apply {
+        background = shape(fieldColor, 19, true)
+        val row = LinearLayout(this@renderRemoteMessagesPage).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        row.addView(vectorIcon(R.drawable.ic_shield, 23, highlight))
+        val texts = LinearLayout(this@renderRemoteMessagesPage).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(11), 0, 0, 0) }
+        texts.addView(label(if (messagesLoading) "Consultando aparelho…" else "Consulta protegida", 13f, strong = true))
+        texts.addView(label("Dados temporários · códigos sensíveis filtrados", 11f, muted = true))
+        row.addView(texts, LinearLayout.LayoutParams(0, -2, 1f))
+        addView(row)
+    }
+    content.addView(info)
+    sectionGap(content, 12)
 
     val root = messagesData
     val state = root?.optJSONObject("messagingPermissions")
@@ -222,8 +234,8 @@ internal fun MainActivity.renderRemoteMessagesPage() {
     }
     content.addView(tabs)
     sectionGap(content, 11)
-    content.addView(label(if (messagesLoading) "Atualizando mensagens…" else
-        "Leitura sob demanda · dados temporários · códigos de autenticação bloqueados", 11f, muted = true))
+    content.addView(label(if (messagesLoading) "Atualizando lista…" else
+        "Escolha SMS ou Notificações · toque em atualizar para consultar", 11f, muted = true))
     if (messagesError != null) {
         sectionGap(content, 9)
         content.addView(panel(12).apply {
@@ -282,7 +294,10 @@ private fun MainActivity.renderSmsMessages(root: JSONObject, state: JSONObject?,
             state?.optBoolean("smsRead") == true || state?.optBoolean("smsRealtime") == true -> "Nenhum SMS permitido pelo filtro nesta consulta."
             else -> "Ative a leitura de SMS e autorize a permissão no aparelho monitorado."
         }
-        content.addView(label(hint, 13f, muted = true))
+        content.addView(panel(16).apply {
+            background = shape(fieldColor, 19, true)
+            addView(iconSectionHeader(R.drawable.ic_message, "Nenhum SMS disponível", hint))
+        })
     }
     val subscriptions = root.optJSONArray("smsSubscriptions")
     val bySender = items.groupBy { it.optString("address").ifBlank { "Remetente desconhecido" } }
@@ -342,7 +357,10 @@ private fun MainActivity.renderAppNotifications(state: JSONObject?, items: List<
     content.addView(iconSectionHeader(R.drawable.ic_bell, "Notificações", if (state?.optBoolean("allNotifications") == true)
         "Todos os aplicativos elegíveis" else "Aplicativos autorizados no monitorado"))
     sectionGap(content, 12)
-    if (items.isEmpty()) content.addView(label("Nenhuma notificação elegível nesta consulta.", 13f, muted = true))
+    if (items.isEmpty()) content.addView(panel(16).apply {
+        background = shape(fieldColor, 19, true)
+        addView(iconSectionHeader(R.drawable.ic_bell, "Sem notificações", "Nenhum evento autorizado nesta consulta"))
+    })
     val byConversation = items.groupBy { "${it.optString("app")}|${it.optString("title")}" }
         .entries.sortedByDescending { group -> group.value.maxOf { it.optLong("whenMs") } }
     byConversation.forEach { (_, notifications) ->
@@ -351,8 +369,13 @@ private fun MainActivity.renderAppNotifications(state: JSONObject?, items: List<
         val pkg = mostRecent.optString("app")
         val title = mostRecent.optString("title").ifBlank { "Sem título" }
         val app = friendlyNotificationApp(pkg)
-        card.addView(label(title, 14f, strong = true))
-        card.addView(label("$app · ${notifications.size} notificação(ões)", 11f, muted = true))
+        val heading = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val headingText = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        headingText.addView(label(title, 14f, strong = true))
+        headingText.addView(label("$app · ${notifications.size} notificação(ões)", 11f, muted = true))
+        heading.addView(headingText, LinearLayout.LayoutParams(0, -2, 1f))
+        heading.addView(visualTag("ALERTA", SettingsBadgeKind.NEUTRAL))
+        card.addView(heading)
         sectionGap(card, 6)
         messageDivider(card)
         notifications.forEach { item ->
@@ -387,8 +410,11 @@ internal fun MainActivity.showRemoteMessageEditor(operation: String, recipient: 
         showAppNotice("Conexão não confirmada", "Atualize a conexão antes de responder mensagens.")
         return
     }
-    val (wrapper, layout) = dialogWrapper()
-    dialogIntro(layout, "$recipientLabel\n\nUma solicitação de envio não garante entrega ao destinatário.")
+    val (wrapper, layout) = visualDialogContainer()
+    layout.addView(visualHeader(R.drawable.ic_message, "Responder mensagem", recipientLabel))
+    sectionGap(layout, 11)
+    layout.addView(label("A mensagem será enviada pelo celular monitorado. O envio não garante entrega.", 12f, muted = true))
+    sectionGap(layout, 11)
     val options = mutableListOf(-1 to "Chip padrão")
     if (operation == "smsReply" && subscriptions != null) {
         for (i in 0 until subscriptions.length()) {
@@ -414,8 +440,8 @@ internal fun MainActivity.showRemoteMessageEditor(operation: String, recipient: 
         filters = arrayOf(android.text.InputFilter.LengthFilter(500))
     }
     layout.addView(input, LinearLayout.LayoutParams(-1, -2))
-    val dialog = themedPopup(this).setTitle("Responder mensagem")
-        .setView(wrapper).setNegativeButton("Cancelar", null).setPositiveButton("Revisar", null).create()
+    val dialog = themedPopup(this)
+        .setView(wrapper).setNegativeButton("Cancelar", null).setPositiveButton("Revisar envio", null).create()
     showManagedDialog(dialog)
     dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
         val text = input.text.toString().trim()

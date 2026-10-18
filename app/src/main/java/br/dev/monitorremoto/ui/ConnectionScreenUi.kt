@@ -90,11 +90,13 @@ internal fun MainActivity.renderController() {
     sectionGap(card, 6)
     val statusRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
     currentStatus = label("", 11f, strong = true).apply {
-        setPadding(0, 0, 0, 0); maxLines = 1
+        setPadding(dp(10), dp(6), dp(10), dp(6))
+        background = shape(fieldColor, 99, true)
+        maxLines = 1
     }
     statusRow.addView(currentStatus)
     statusRow.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
-    currentUpdated = label("", 9.5f, muted = true).apply {
+    currentUpdated = label("", 10.5f, muted = true).apply {
         setPadding(0, 0, 0, 0); maxLines = 1
         ellipsize = android.text.TextUtils.TruncateAt.END
         gravity = Gravity.END
@@ -111,8 +113,8 @@ internal fun MainActivity.renderController() {
     if (cached != null && remoteConnection.cachedHost == host) displayResult(cached, fromCache = true)
     else if (remoteConnection.state == "offline") resultBox?.addView(connectionIssueCard(host))
     else resultBox?.addView(label("Toque em Conectar para escolher QR Code, conexão manual ou aparelho salvo.", 13f, muted = true))
-    gap(12)
-    addText("Atualização automática a cada 15 segundos enquanto esta tela estiver aberta.", 11f, muted = true)
+    gap(8)
+    addText("Atualização automática enquanto esta tela está aberta · intervalo de 15 s.", 10.5f, muted = true)
 }
 
 internal fun MainActivity.effectiveConnectionState(): String {

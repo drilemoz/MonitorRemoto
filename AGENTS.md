@@ -1,3 +1,28 @@
+# Monitor Remoto 0.1.0-alpha.98
+
+- Alpha.98 refina visualmente ConnectionScreenUi, PairingScreenUi, RemoteDetailsActivity e AdbActivity. Preservar a criptografia, QR temporário, pareamento manual, credenciais salvas, comandos ADB fixos, confirmações e FLAG_SECURE.
+- Todas as telas independentes devem reutilizar MonitorScreenSkin; a próxima versão sequencial é alpha.99 / versionCode 99.
+- Sincronizar Gradle, AppVersion, README, CHANGELOG, docs/RELEASE_NOTES, docs/ARCHITECTURE, VersionNewsUi e validador em toda mudança. Não confundir sintaxe Kotlin com compilação Android.
+
+# Monitor Remoto 0.1.0-alpha.97
+
+- Alpha.97 moderniza `RemoteScreenActivity` e `RemoteMessagesUi` reaproveitando `MonitorScreenSkin`, `MonitorVisualKit` e os diálogos temáticos; nenhum comando, permissão, token MediaProjection, regra SMS ou acesso remoto deve ser alterado ao evoluir o visual.
+- O modal de resposta mantém o duplo passo (revisar e confirmar envio), valida destinatário/conteúdo e não persiste dados sensíveis. As notificações mantêm filtros e conteúdos apenas na RAM durante a visita.
+- Versão seguinte alpha.98/versionCode 98; atualizar Gradle, `AppVersion`, README, CHANGELOG, docs, tela Novidades e validador. Dois aparelhos exigem a mesma versão; build Android completo deve ser confirmado no GitHub Actions.
+
+# Monitor Remoto 0.1.0-alpha.96
+
+- Alpha.96 moderniza cinco telas independentes usando `ui/MonitorScreenSkin.kt`: fotos no controlador, preparo da foto, câmera ao vivo, câmera local monitorada e localização. Novas telas devem reutilizar o mesmo padrão em vez de controles Android sem tema.
+- NÃO alterar captura, autorização local, gravação, protocolo, transporte ou revogação ao refatorar a UI. Fotografia só durante sessão previamente armada no monitorado; câmera ao vivo exige Activity local visível.
+- Próxima versão sequencial: alpha.97/versionCode 97; sincronizar Gradle, AppVersion, docs, README, CHANGELOG, tela Novidades, validador e artefato. Exigir mesma versão nos dois aparelhos. A validação local não garante build Gradle/Android.
+
+# Monitor Remoto 0.1.0-alpha.95
+
+- Alpha.95 adiciona `ui/MonitorActionSheet.kt` com ações tipadas; usar ícone, texto curto e subtítulo; ações destrutivas sempre destacadas e SEM execução automática. Não substituir as confirmações existentes do ADB, exclusão ou bloqueio.
+- Arquivos, ordenação, downloads interrompidos e catálogo de aplicativos utilizam a folha visual compartilhada. `themedPopup` ainda atende confirmações próprias que exigem escolha consciente.
+- Configurações mantém pesquisa e autorização local. Não ampliar permissões nem acessar arquivos fora de `Downloads/Monitor Remoto` pertencentes ao aplicativo.
+- Incrementar para alpha.96 na próxima alteração, sincronizando Gradle, AppVersion, README, CHANGELOG, RELEASE_NOTES, docs e tela Novidades. Sempre usar mesma versão nos dois aparelhos e validar GitHub Actions antes de afirmar que APK compila.
+
 # Monitor Remoto 0.1.0-alpha.94
 
 - Alpha.94 cria o kit reutilizável `ui/MonitorVisualKit.kt` para padronizar gradualmente telas e diálogos Android sem introduzir dependência Material3/Compose. Ao criar ou refatorar diálogos, preservar comandos e confirmações de cada módulo, usar os temas `MonitorDialogLight/Dark` e testes de regressão.

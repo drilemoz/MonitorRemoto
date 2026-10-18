@@ -1,5 +1,7 @@
 package br.dev.monitorremoto.ui
 
+import br.dev.monitorremoto.R
+
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
@@ -38,58 +40,37 @@ class RemotePhotoSetupActivity : Activity() {
         }
     }
     private fun dp(v: Int) = (resources.displayMetrics.density * v).toInt()
-    private val dark get() = when (SettingsStore.theme(this)) {
-        "dark" -> true
-        "system" -> resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-        else -> false
-    }
-    private val bg get() = if (dark) Color.rgb(14, 23, 36) else Color.rgb(247, 249, 252)
-    private val surface get() = if (dark) Color.rgb(28, 40, 55) else Color.WHITE
-    private val ink get() = if (dark) Color.WHITE else Color.rgb(29, 42, 60)
-    private val muted get() = if (dark) Color.rgb(175, 187, 202) else Color.rgb(102, 115, 130)
-    private fun rounded(color: Int) = GradientDrawable().apply { setColor(color); cornerRadius = dp(15).toFloat() }
-    private fun text(value: String, size: Float = 14f, title: Boolean = false): TextView = TextView(this).apply {
-        text = value; textSize = size; setTextColor(if (title) ink else muted)
-        if (title) setTypeface(null, Typeface.BOLD)
-    }
+    private val skin by lazy { MonitorScreenSkin(this) }
+    private val bg get() = skin.background
+    private val surface get() = skin.surface
+    private val ink get() = skin.foreground
+    private val muted get() = skin.muted
+    private fun rounded(color: Int) = skin.rounded(color, 20, true)
+    private fun text(value: String, size: Float = 14f, title: Boolean = false): TextView =
+        skin.label(value, size, title)
     private fun section(content: LinearLayout, heading: String, explanation: String) {
-        val card = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(15), dp(14), dp(15), dp(14))
-            background = rounded(surface)
-        }
+        val card = skin.card()
         card.addView(text(heading, 15f, true))
         card.addView(text(explanation, 13f).apply { setPadding(0, dp(7), 0, 0) })
         content.addView(card, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
     }
-    private fun action(label: String, highlighted: Boolean, click: () -> Unit) = Button(this).apply {
-        text = label; isAllCaps = false; textSize = 13f; minHeight = dp(52)
-        setTextColor(if (highlighted) Color.WHITE else ink)
-        background = rounded(if (highlighted) Color.rgb(36, 110, 197) else surface)
-        elevation = 0f; stateListAnimator = null
-        setOnClickListener { click() }
-    }
+    private fun action(label: String, highlighted: Boolean, click: () -> Unit): Button =
+        skin.button(label, highlighted, click)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = bg; window.navigationBarColor = bg
-        @Suppress("DEPRECATION")
-        window.decorView.systemUiVisibility = if (dark) 0 else
-            View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        skin.applyWindow()
         val scroller = ScrollView(this).apply { setBackgroundColor(bg); isFillViewport = true; fitsSystemWindows = true }
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(16), dp(14), dp(16), dp(24))
         }
         scroller.addView(content)
-        content.addView(action("‹ Voltar", false) { finish() }, LinearLayout.LayoutParams(dp(98), dp(52)))
-        content.addView(text("Fotografia remota", 22f, true).apply { setPadding(0, dp(14), 0, dp(5)) })
-        content.addView(text("Preparação no aparelho monitorado", 13f))
-        val current = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            background = rounded(surface)
-            setPadding(dp(15), dp(14), dp(15), dp(14))
-        }
-        current.addView(text("Estado da câmera", 14f, true))
+        content.addView(skin.header(R.drawable.ic_remote_camera, "Fotografia remota", "Preparação da câmera neste aparelho") { finish() })
+        val current = skin.card()
+        current.addView(skin.badge("● STATUS DA SESSÃO", true), LinearLayout.LayoutParams(-2, -2).apply {
+            bottomMargin = dp(10)
+        })
+        current.addView(text("Estado da câmera", 16f, true))
         status = text("Verificando…", 13f).apply { setPadding(0, dp(7), 0, 0) }
         current.addView(status)
         content.addView(current, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(13) })

@@ -26,6 +26,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import br.dev.monitorremoto.R
 import br.dev.monitorremoto.adb.AdbClient
 import br.dev.monitorremoto.adb.AdbAutoConnectPolicy
 import br.dev.monitorremoto.adb.AdbDiscovery
@@ -112,6 +113,7 @@ class AdbActivity : Activity() {
     private val soft get() = if (dark) Color.rgb(42, 52, 65) else Color.rgb(243, 245, 248)
     private val stroke get() = if (dark) Color.rgb(67, 81, 98) else Color.rgb(226, 230, 236)
     private val success get() = if (dark) Color.rgb(135, 230, 180) else Color.rgb(21, 135, 75)
+    private val skin by lazy { MonitorScreenSkin(this) }
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
     private fun shape(color: Int, radius: Int = 20, line: Boolean = false) = GradientDrawable().apply {
         setColor(color)
@@ -134,7 +136,7 @@ class AdbActivity : Activity() {
             isAllCaps = false
             minHeight = dp(50)
             elevation = 0f
-            background = shape(if (primary) Color.rgb(19, 21, 25) else if (outline) surface else soft, 17, outline)
+            background = shape(if (primary) skin.accent else if (outline) surface else soft, 15, outline)
             setTextColor(if (primary) Color.WHITE else fg)
             // Distância mínima uniforme, inclusive nos pop-ups e cartões.
             layoutParams = LinearLayout.LayoutParams(-1, dp(50)).apply { bottomMargin = dp(9) }
@@ -146,8 +148,8 @@ class AdbActivity : Activity() {
             layoutParams = LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(7) }
         }
     private fun card(container: LinearLayout, fill: Int = surface) = column().apply {
-        setPadding(dp(18), dp(18), dp(18), dp(18))
-        background = shape(fill, 22, fill == surface)
+        setPadding(dp(15), dp(14), dp(15), dp(14))
+        background = shape(fill, 20, fill == surface)
         container.addView(this, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
     }
     private fun formField(hintValue: String, numeric: Boolean = false, pin: Boolean = false) =
@@ -207,13 +209,13 @@ class AdbActivity : Activity() {
             window.insetsController?.setSystemBarsAppearance(if (dark) 0 else flags, flags)
         } else window.decorView.systemUiVisibility = if (dark) 0 else
             View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-        root.addView(button("‹ Configurações", outline = true) { finish() })
-        root.addView(text("Monitor Remoto", 28f, bold = true))
-        root.addView(text("Dispositivos ADB", 14f, secondary = true))
+        // Cabeçalho comum às telas independentes. O retorno não altera a sessão ADB.
+        root.addView(skin.header(R.drawable.ic_phone, "ADB sem fios", "Pareamento e dispositivos autorizados") { finish() })
+        root.addView(View(this), LinearLayout.LayoutParams(1, dp(14)))
 
         val summaryCard = card(root)
         val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        val label = text("Estado da conexão", 15f, bold = true)
+        val label = text("Conexão selecionada", 15f, bold = true)
         header.addView(label, LinearLayout.LayoutParams(0, -2, 1f))
         chip = text("Desconectado", 13f, bold = true).apply {
             gravity = Gravity.CENTER
@@ -221,7 +223,7 @@ class AdbActivity : Activity() {
         }
         header.addView(chip)
         summaryCard.addView(header)
-        summary = text("Nenhum aparelho conectado", 19f, bold = true)
+        summary = text("Nenhum aparelho conectado", 17f, bold = true)
         detail = text("Adicione um aparelho ou reconecte um salvo.", 13f, secondary = true)
         summaryCard.addView(summary)
         summaryCard.addView(detail)
@@ -254,14 +256,14 @@ class AdbActivity : Activity() {
         activeActionsRow.visibility = View.GONE
         activeSettingsRow.visibility = View.GONE
 
-        root.addView(text("Outros celulares salvos", 20f, bold = true))
+        root.addView(text("Outros celulares salvos", 17f, bold = true))
         savedContainer = column()
         root.addView(savedContainer)
-        root.addView(button("+ Adicionar outro celular", outline = true) { chooseRole() })
+        root.addView(button("+ Adicionar outro celular", primary = true) { chooseRole() })
         stopRetryButton = button("Cancelar reconexão automática", outline = true, allowBusy = true) { stopReconnect() }
         stopRetryButton.visibility = View.GONE
         root.addView(stopRetryButton)
-        advancedToggle = button("Configurações avançadas  ▾") { toggleAdvanced() }
+        advancedToggle = button("Configurações avançadas  ▾", outline = true) { toggleAdvanced() }
         root.addView(advancedToggle)
         advancedContainer = column().apply { visibility = View.GONE }
         val advCard = card(advancedContainer)
@@ -325,9 +327,9 @@ class AdbActivity : Activity() {
         }
         otherKnown.forEach { device ->
             val tile = card(savedContainer, soft)
-            tile.addView(text(device.name, 21f, bold = true))
+            tile.addView(text(device.name, 16f, bold = true))
             tile.addView(text("Última conexão: ${lastSeen(device.lastConnectedAt)}", 13f, secondary = true))
-            tile.addView(text("● Desconectado", 13f, secondary = true))
+            tile.addView(text("Salvo · conexão não ativa", 12f, secondary = true))
             tile.addView(button("Reconectar", primary = true) { reconnect(device) })
             tile.addView(button("Opções do aparelho") { deviceOptions(device) })
         }
@@ -335,7 +337,7 @@ class AdbActivity : Activity() {
     private fun toggleAdvanced() {
         advancedVisible = !advancedVisible
         advancedContainer.visibility = if (advancedVisible) View.VISIBLE else View.GONE
-        advancedToggle.text = if (advancedVisible) "Ocultar configurações avançadas  ▴" else "Configurações avançadas  ▾"
+        advancedToggle.text = if (advancedVisible) "Ocultar opções avançadas  ▴" else "Configurações avançadas  ▾"
     }
 
     private fun modal(title: String, body: LinearLayout, cancel: Boolean = true): AlertDialog {

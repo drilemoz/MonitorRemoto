@@ -1,3 +1,37 @@
+# Monitor Remoto v0.1.0-alpha.98 · Conexão, pareamento, detalhes e ADB
+
+- Tela de controle com estado de conexão compacto, latência e hora da última consulta já obtidas de respostas reais.
+- Pareamento via QR, chave manual e aparelhos salvos com escolhas mais claras; sem alteração de segurança nem de credenciais.
+- Detalhes do aparelho e página ADB adotam `MonitorScreenSkin`, cabeçalhos com ícones e cartões mais compactos.
+- Fluxos críticos de ADB permanecem protegidos por conexão pareada e confirmação.
+- Testes locais não substituem compilação Gradle nem ensaios reais no Android.
+
+# Monitor Remoto v0.1.0-alpha.97 · Tela remota, mensagens e notificações
+
+- Ver tela: cabeçalho padronizado, controles de captura mais compactos e painel de sessão com informações de status e canal.
+- Mensagens e notificações: apresentação renovada, grupos com identificação melhor, cartões separados e avisos discretos sobre leitura protegida e temporária.
+- Edição de resposta: diálogo central com o kit visual, validação de campos, filtro de conteúdo sensível e confirmação explícita antes de envio.
+- Preservados MediaProjection, permissões SMS/notificações, AES-GCM, funcionamento local e todos os botões de interrupção.
+- Sintaxe Kotlin e verificações locais não substituem Gradle/Android nem testes em aparelhos reais.
+
+# Monitor Remoto v0.1.0-alpha.96 · Modernização de captura e localização
+
+- Sistema de aparência compartilhado para telas especializadas, com cabeçalhos, cartões e botões coerentes com o painel principal.
+- Fotos: apresentação e estado de captura mais claros, preservando a foto única por solicitação, autorização local de câmera e o salvamento opcional.
+- Câmera ao vivo e abertura no monitorado: cores vinculadas ao tema, prévia mais organizada e ações compactas; sem alteração no protocolo JPEG e sem gravação automática.
+- Mapa: cabeçalho e botões seguem os mesmos componentes do restante do aplicativo, mantendo precisão, idade da leitura e consultas autenticadas.
+- Nenhuma permissão, comando remoto, par de chaves, autorização ou confirmação sensível foi ampliada.
+- Verificações locais não equivalem à compilação Gradle nem aos testes físicos no Android.
+
+# Monitor Remoto v0.1.0-alpha.95 · Menus e Configurações modernizados
+
+- Novo componente reutilizável de menu inferior com ícones, títulos, subtítulos, contraste claro/escuro e altura adaptada.
+- Ações de arquivos, seleção de ordenação e gerenciamento de downloads interrompidos migrados para o novo menu.
+- Menu de aplicativos modernizado, identificando ações que dependem de ADB.
+- Página Configurações com cabeçalho visual, grupos compactos e ícones destacados.
+- Confirmações de exclusão, reinicialização e parada continuam obrigatórias, sem enviar comandos automaticamente.
+- Build Android e inspeção de aparência em dispositivo pendentes.
+
 # Monitor Remoto v0.1.0-alpha.94 · Identidade visual e energia
 
 - Componentes visuais reutilizáveis (cabeçalhos, ações, chips, avisos, botões e cartões compactos).

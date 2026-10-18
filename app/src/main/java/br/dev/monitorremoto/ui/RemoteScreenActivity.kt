@@ -242,8 +242,8 @@ class RemoteScreenActivity : Activity() {
     private fun rowAction(image: Int, label: String, action: () -> Unit): Triple<LinearLayout, ImageView, TextView> {
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER
-            background = shape(surface, 13, true)
-            setPadding(dp(4), dp(8), dp(4), dp(8))
+            background = shape(surface, 17, true)
+            setPadding(dp(4), dp(9), dp(4), dp(9))
             isClickable = true; isFocusable = true
             setOnClickListener { action() }
         }
@@ -537,36 +537,48 @@ class RemoteScreenActivity : Activity() {
         }
         normalScroll.addView(normal)
         screenRoot.addView(normalScroll, FrameLayout.LayoutParams(-1, -1))
-        val toolbar = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
-        val back = icon(R.drawable.ic_remote_back, "Voltar")
-        back.setOnClickListener { finish() }
-        toolbar.addView(back, LinearLayout.LayoutParams(dp(44), dp(46)))
-        toolbar.addView(text("Ver tela", 21f, ink, true), LinearLayout.LayoutParams(0, dp(48), 1f))
-        cameraButton = icon(R.drawable.ic_remote_camera, "Salvar print na galeria", surface)
+        // Cabeçalho e barra de ações independentes: não esmagar o nome do aparelho
+        // em telas pequenas. O kit visual é o mesmo usado nas telas de foto/câmera.
+        val skin = MonitorScreenSkin(this)
+        normal.addView(skin.header(R.drawable.ic_remote_phone, "Ver tela", "Visualização autorizada do aparelho remoto") { finish() })
+        val toolbar = LinearLayout(this).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            orientation = LinearLayout.HORIZONTAL
+            background = skin.rounded(skin.surface, 18, true)
+            setPadding(dp(9), dp(6), dp(9), dp(6))
+        }
+        toolbar.addView(text("Ações de captura", 12f, muted, true), LinearLayout.LayoutParams(0, dp(42), 1f))
+        cameraButton = icon(R.drawable.ic_remote_camera, "Salvar print na galeria", skin.secondary)
         cameraButton.setOnClickListener { saveQuickFrame() }
         cameraButton.setOnLongClickListener { saveHighQuality(); true }
-        toolbar.addView(cameraButton, LinearLayout.LayoutParams(dp(42), dp(42)))
-        audioButton = icon(R.drawable.ic_remote_volume, "Ouvir áudio interno", surface)
+        toolbar.addView(cameraButton, LinearLayout.LayoutParams(dp(44), dp(44)))
+        audioButton = icon(R.drawable.ic_remote_volume, "Ouvir áudio interno", skin.secondary)
         audioButton.setOnClickListener { if (audioWanted) stopAudio() else startAudio() }
-        toolbar.addView(audioButton, LinearLayout.LayoutParams(dp(42), dp(42)))
-        fullscreenButton = icon(R.drawable.ic_remote_fullscreen, "Abrir tela cheia", surface)
+        toolbar.addView(audioButton, LinearLayout.LayoutParams(dp(44), dp(44)).apply { leftMargin = dp(6) })
+        fullscreenButton = icon(R.drawable.ic_remote_fullscreen, "Abrir tela cheia", skin.secondary)
         fullscreenButton.setOnClickListener { toggleFullscreen() }
-        toolbar.addView(fullscreenButton, LinearLayout.LayoutParams(dp(42), dp(42)))
-        normal.addView(toolbar)
+        toolbar.addView(fullscreenButton, LinearLayout.LayoutParams(dp(44), dp(44)).apply { leftMargin = dp(6) })
+        normal.addView(toolbar, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
 
+        val connectionCard = skin.card()
+        val cardTitle = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        cardTitle.addView(text("Estado da sessão", 13f, ink, true), LinearLayout.LayoutParams(0, -2, 1f))
+        cardTitle.addView(skin.badge("CHAVE PAREADA", true))
+        connectionCard.addView(cardTitle)
         status = text("Conectando ao monitorado...", 12.5f, muted).apply {
-            maxLines = 2; setPadding(dp(3), dp(9), 0, dp(11))
+            maxLines = 3; setPadding(0, dp(9), 0, dp(8))
         }
-        normal.addView(status)
+        connectionCard.addView(status)
         channelBadge = text(AdbScreenRouting.label(false), 12f, muted, true).apply {
-            setPadding(dp(12), dp(8), dp(12), dp(8))
-            background = shape(surface, 12, true)
+            setPadding(dp(11), dp(9), dp(11), dp(9))
+            background = skin.rounded(skin.secondary, 12)
             maxLines = 2
         }
-        normal.addView(channelBadge, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(6); bottomMargin = dp(6) })
+        connectionCard.addView(channelBadge)
+        normal.addView(connectionCard, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
         updateChannelBadge()
-        normal.addView(text("TRANSMISSÃO DA TELA", 12f, muted, true).apply {
-            setPadding(dp(4), dp(7), 0, dp(8))
+        normal.addView(text("MODO DE TRANSMISSÃO", 11f, muted, true).apply {
+            setPadding(dp(5), dp(12), 0, dp(8))
         })
         val streamRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL

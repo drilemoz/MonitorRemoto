@@ -55,11 +55,12 @@ private fun folded(value: String): String = Normalizer.normalize(value, Normaliz
     .replace(Regex("\\p{M}+"), "").lowercase(Locale.ROOT).trim()
 
 internal fun MainActivity.renderSettingsHome() {
-    val header = panel(14)
-    header.addView(label("Configure este celular", 15f, strong = true))
-    header.addView(label("As autorizações são concedidas no próprio aparelho. O controlador não pode ativá-las por aqui.", 11.5f, muted = true))
+    val header = panel(15)
+    header.addView(visualHeader(R.drawable.ic_settings, "Configurações", "Encontre rapidamente o que deseja ajustar"))
+    sectionGap(header, 9)
+    header.addView(visualTag("Permissões controladas neste celular", SettingsBadgeKind.NEUTRAL))
     content.addView(header)
-    sectionGap(content, 10)
+    sectionGap(content, 11)
 
     val search = EditText(this).apply {
         hint = "Buscar: GPS, câmera, arquivos..."
@@ -87,16 +88,25 @@ internal fun MainActivity.renderSettingsHome() {
             }
             if (matches.isEmpty()) return@forEach
             count += matches.size
-            val card = panel(12)
-            card.addView(label(group.title, 11f, strong = true, muted = true))
-            sectionGap(card, 6)
+            val card = panel(11)
+            val sectionHeading = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+            }
+            sectionHeading.addView(View(this).apply { background = shape(highlight, 99) },
+                LinearLayout.LayoutParams(dp(4), dp(19)))
+            sectionHeading.addView(label(group.title, 11f, strong = true, muted = true).apply {
+                setPadding(dp(10), 0, 0, 0)
+            })
+            card.addView(sectionHeading)
+            sectionGap(card, 9)
             matches.forEachIndexed { index, item ->
                 val row = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL
                     gravity = Gravity.CENTER_VERTICAL
-                    background = shape(fieldColor, 13, true)
-                    setPadding(dp(11), dp(9), dp(11), dp(9))
-                    minimumHeight = dp(64)
+                    background = shape(fieldColor, 16)
+                    setPadding(dp(12), dp(9), dp(12), dp(9))
+                    minimumHeight = dp(62)
                     isClickable = true
                     isFocusable = true
                     contentDescription = "${item.title}. ${item.hint}"
@@ -105,7 +115,12 @@ internal fun MainActivity.renderSettingsHome() {
                         else openSettingsSection(item.section)
                     }
                 }
-                row.addView(vectorIcon(item.icon, 21, highlight))
+                val iconPlate = LinearLayout(this).apply {
+                    gravity = Gravity.CENTER
+                    background = shape(surface, 12)
+                    addView(vectorIcon(item.icon, 21, highlight))
+                }
+                row.addView(iconPlate, LinearLayout.LayoutParams(dp(40), dp(40)))
                 row.addView(View(this), LinearLayout.LayoutParams(dp(11), 1))
                 val text = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
                 text.addView(label(item.title, 13.5f, strong = true).apply { setPadding(0, 0, 0, 0) })
@@ -113,7 +128,7 @@ internal fun MainActivity.renderSettingsHome() {
                 row.addView(text, LinearLayout.LayoutParams(0, -2, 1f))
                 row.addView(label("›", 21f, muted = true))
                 card.addView(row)
-                if (index < matches.lastIndex) sectionGap(card, 7)
+                if (index < matches.lastIndex) sectionGap(card, 5)
             }
             results.addView(card)
             sectionGap(results, 10)

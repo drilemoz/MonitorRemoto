@@ -141,9 +141,7 @@ class RemoteFilesActivity : Activity() {
         setOnClickListener { action() }
     }
     /** Diálogos consistentes com o tema, evitando listas em estilo legado. */
-    private fun modernBuilder() = AlertDialog.Builder(this,
-        if (dark) android.R.style.Theme_Material_Dialog_Alert
-        else android.R.style.Theme_Material_Light_Dialog_Alert)
+    private fun modernBuilder() = themedPopup(this)
 
     private fun add(view: View, bottom: Int = 10) {
         content.addView(view, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(bottom) })
@@ -384,9 +382,16 @@ class RemoteFilesActivity : Activity() {
 
     private fun chooseSort() {
         val names = arrayOf("Nome", "Mais recentes", "Maiores primeiro", "Tipo")
-        modernBuilder().setTitle("Ordenar arquivos por")
-            .setSingleChoiceItems(names, sortMode) { dialog, value -> sortMode = value; dialog.dismiss(); renderItems() }
-            .setNegativeButton("Cancelar", null).show()
+        val icons = intArrayOf(android.R.drawable.ic_menu_sort_alphabetically,
+            android.R.drawable.ic_menu_recent_history, android.R.drawable.ic_menu_sort_by_size,
+            android.R.drawable.ic_menu_info_details)
+        showMonitorActionSheet("Ordenar arquivos", "Escolha como organizar esta pasta", names.mapIndexed { index, name ->
+            MonitorSheetAction(icons[index], name,
+                if (index == sortMode) "Selecionado atualmente" else "Ordenar por ${name.lowercase(Locale.getDefault())}") {
+                sortMode = index
+                renderItems()
+            }
+        })
     }
 
     private fun entrySize(item: JSONObject): String {
@@ -539,84 +544,50 @@ class RemoteFilesActivity : Activity() {
         partialIds.contains(RemoteDownloadResume.id(host, path + item.optString("name"),
             item.optLong("size", -1L), item.optLong("modified", -1L)))
 
-    /** Menu nativo do aplicativo, com ícones e ações contextualizadas. */
+    /** Folha de ações comum a outros módulos: nenhuma opção é executada ao abrir. */
     private fun openActions(item: JSONObject) {
         val name = item.optString("name")
         if (entries.count { it.optString("name") == name } != 1) {
             status.text = "Nome repetido: renomeie diretamente no aparelho de origem."; return
         }
         val isFolder = item.optBoolean("folder")
-        val holder = panel().apply { setPadding(dp(10), dp(8), dp(10), dp(8)) }
-        holder.addView(label("${entryIcon(item)} $name", 15f, true).apply { maxLines = 3 })
-        holder.addView(label(if (isFolder) "Pasta" else "${entrySize(item)} · ${entryDate(item)}", 12f).apply {
-            setTextColor(muted)
-        })
-        holder.addView(label("AÇÕES DISPONÍVEIS", 11f, true).apply { setTextColor(accent) })
-        var menu: AlertDialog? = null
-        fun option(icon: Int, caption: String, action: () -> Unit) {
-            val row = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(12), dp(8), dp(12), dp(8))
-                isClickable = true; isFocusable = true
-                background = rounded(softColor, 12)
-            }
-            row.addView(ImageView(this).apply {
-                setImageResource(icon)
-                imageTintList = android.content.res.ColorStateList.valueOf(accent)
-                contentDescription = null
-            }, LinearLayout.LayoutParams(dp(28), dp(28)))
-            row.addView(label(caption, 13f, true), LinearLayout.LayoutParams(-1, -2).apply {
-                marginStart = dp(12)
-            })
-            row.setOnClickListener { menu?.dismiss(); action() }
-            holder.addView(row, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(7) })
+        val options = mutableListOf<MonitorSheetAction>()
+        fun option(icon: Int, title: String, detail: String = "", danger: Boolean = false, action: () -> Unit) {
+            options.add(MonitorSheetAction(icon, title, detail, danger, action))
         }
         if (isFolder) {
-            option(android.R.drawable.ic_menu_view, "Abrir pasta") { openFolder(name) }
-            option(android.R.drawable.ic_menu_save, "Baixar pasta e subpastas") { chooseFolderDestination(name) }
+            option(android.R.drawable.ic_menu_view, "Abrir pasta", "Explorar conteúdo") { openFolder(name) }
+            option(android.R.drawable.ic_menu_save, "Baixar pasta", "Salvar pasta e subpastas em Downloads") {
+                chooseFolderDestination(name)
+            }
         } else {
             option(android.R.drawable.ic_menu_save,
-                if (hasPartial(item)) "Retomar download" else "Baixar para Downloads") { saveDownloads(item) }
-            option(android.R.drawable.ic_menu_view, "Baixar e visualizar") { saveDownloads(item, "view") }
-            option(android.R.drawable.ic_menu_share, "Baixar e compartilhar") { saveDownloads(item, "share") }
+                if (hasPartial(item)) "Retomar download" else "Baixar arquivo", "Downloads/Monitor Remoto") { saveDownloads(item) }
+            option(android.R.drawable.ic_menu_view, "Visualizar", "Baixar e abrir no controlador") { saveDownloads(item, "view") }
+            option(android.R.drawable.ic_menu_share, "Compartilhar", "Baixar e abrir compartilhamento") { saveDownloads(item, "share") }
         }
-        option(android.R.drawable.ic_menu_info_details, "Informações") { fileInfo(item) }
-        option(android.R.drawable.ic_menu_agenda, "Selecionar") { selecting = true; toggleSelection(item) }
+        option(android.R.drawable.ic_menu_info_details, "Informações", "Tamanho, data e detalhes") { fileInfo(item) }
+        option(android.R.drawable.ic_menu_agenda, "Selecionar", "Adicionar à seleção múltipla") {
+            selecting = true; toggleSelection(item)
+        }
         if (writeAllowed) {
             if (!isFolder) {
                 option(android.R.drawable.ic_menu_edit, "Renomear") { askRename(item) }
-                option(android.R.drawable.ic_menu_directions, "Mover para outra subpasta") {
+                option(android.R.drawable.ic_menu_directions, "Mover", "Outra subpasta remota") {
                     chooseRemoteFolder("move", listOf(name))
                 }
-                option(android.R.drawable.ic_menu_add, "Criar cópia na pasta remota") {
+                option(android.R.drawable.ic_menu_add, "Duplicar", "Criar cópia na pasta remota") {
                     chooseRemoteFolder("copy", listOf(name))
                 }
-                option(android.R.drawable.ic_menu_delete, "Mover para lixeira") {
+                option(android.R.drawable.ic_menu_delete, "Mover para lixeira", "Quando disponível no provedor", true) {
                     confirmBatchTrash(listOf(item))
                 }
             }
             option(android.R.drawable.ic_menu_delete,
-                if (isFolder) "Excluir pasta vazia" else "Excluir definitivamente") {
-                confirmBatchDelete(listOf(item))
-            }
+                if (isFolder) "Excluir pasta vazia" else "Excluir definitivamente",
+                "Exige confirmação", true) { confirmBatchDelete(listOf(item)) }
         }
-        // A lista rolável pertence a este menu, não à ScrollView da Activity.
-        val scroll = ScrollView(this).apply {
-            isFillViewport = false
-            clipToPadding = false
-            addView(holder)
-        }
-        val dialog = modernBuilder().setView(scroll).create()
-        menu = dialog
-        dialog.show()
-        dialog.window?.apply {
-            setBackgroundDrawable(rounded(panelColor, 26, false))
-            setGravity(Gravity.BOTTOM)
-            setLayout(android.view.WindowManager.LayoutParams.MATCH_PARENT,
-                (resources.displayMetrics.heightPixels * 0.78).toInt())
-            addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-        }
+        showMonitorActionSheet(name, if (isFolder) "Pasta remota" else "${entrySize(item)} · ${entryDate(item)}", options)
     }
     private fun toggleSelection(item: JSONObject) {
         val name = item.optString("name")
@@ -1169,7 +1140,7 @@ class RemoteFilesActivity : Activity() {
         }
     }
 
-    /** Mostra cópias parciais de Downloads. Nunca armazena segredo ou caminho remoto em texto. */
+    /** Checkpoints privados: o menu jamais apaga o remoto sem confirmação e ação distinta. */
     private fun showPartialDownloads() {
         val folder = runCatching { RemoteDownloadResume.folder(noBackupFilesDir) }.getOrElse {
             status.text = "Não foi possível consultar cópias parciais: ${it.message}"; return
@@ -1177,35 +1148,35 @@ class RemoteFilesActivity : Activity() {
         val partials = RemoteDownloadResume.list(folder, host)
         if (partials.isEmpty()) {
             modernBuilder().setTitle("Downloads interrompidos")
-                .setMessage("Nenhuma cópia pendente neste controlador. Para retomar, navegue até o mesmo arquivo remoto e escolha Salvar em Downloads.")
+                .setMessage("Não há cópias pendentes neste controlador. Quando houver uma cópia parcial, encontre o mesmo arquivo remoto e escolha Retomar download.")
                 .setPositiveButton("Fechar", null).show()
             return
         }
-        val names = partials.map { item -> "${item.name}\n${formatBytes(item.bytes)} de ${formatBytes(item.total)}" }.toTypedArray()
-        modernBuilder().setTitle("Downloads interrompidos")
-            .setItems(names) { _, which ->
-                val item = partials[which]
+        val options = partials.take(30).map { item ->
+            MonitorSheetAction(android.R.drawable.ic_menu_save, item.name,
+                "${formatBytes(item.bytes)} de ${formatBytes(item.total)} armazenados") {
                 modernBuilder().setTitle(item.name)
-                    .setMessage("Retomar: abra a pasta remota que contém o arquivo e selecione Salvar em Downloads. O nome, tamanho e a data da origem devem coincidir.\n\nApagar remove apenas os blocos temporários privados deste controlador, não o arquivo remoto.")
-                    .setNegativeButton("Cancelar", null)
+                    .setMessage("Para retomar, abra a pasta remota e selecione o mesmo arquivo. Nome, tamanho e data da origem precisam coincidir.\n\nApagar remove somente a cópia parcial privada do controlador, nunca o arquivo remoto.")
+                    .setNegativeButton("Voltar", null)
                     .setPositiveButton("Apagar parcial") { _, _ ->
                         if (copying) { status.text = "Aguarde a transferência terminar."; return@setPositiveButton }
                         RemoteDownloadResume.discard(folder, item.id)
                         status.text = "Cópia parcial apagada deste controlador."
                     }.show()
             }
-            .setNegativeButton("Fechar", null)
-            .setNeutralButton("Apagar todos") { _, _ ->
-                modernBuilder().setTitle("Apagar todas as cópias parciais deste aparelho?")
-                    .setMessage("Libera espaço no controlador. Não modifica arquivos do monitorado nem os downloads já concluídos.")
-                    .setNegativeButton("Cancelar", null)
-                    .setPositiveButton("Apagar") { _, _ ->
-                        if (!copying) {
-                            partials.forEach { RemoteDownloadResume.discard(folder, it.id) }
-                            status.text = "Cópias parciais apagadas."
-                        }
-                    }.show()
-            }.show()
+        } + MonitorSheetAction(android.R.drawable.ic_menu_delete,
+            "Apagar todos os parciais", "Liberar espaço somente neste controlador", true) {
+            modernBuilder().setTitle("Apagar todos os downloads interrompidos?")
+                .setMessage("Exclui apenas os arquivos temporários privados, não modifica arquivos remotos nem downloads concluídos.")
+                .setNegativeButton("Cancelar", null)
+                .setPositiveButton("Apagar parciais") { _, _ ->
+                    if (!copying) {
+                        partials.forEach { RemoteDownloadResume.discard(folder, it.id) }
+                        status.text = "Cópias parciais apagadas."
+                    } else status.text = "Aguarde a transferência terminar."
+                }.show()
+        }
+        showMonitorActionSheet("Downloads interrompidos", "${partials.size} arquivo(s) temporário(s) · mostrando até 30", options)
     }
 
     /** Apenas Downloads usa checkpoint persistente; SAF arbitrário pode não suportar seek. */

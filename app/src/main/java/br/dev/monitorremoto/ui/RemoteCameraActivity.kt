@@ -1,10 +1,13 @@
 package br.dev.monitorremoto.ui
 
+import br.dev.monitorremoto.R
+
 import android.app.Activity
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.widget.FrameLayout
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -52,53 +55,52 @@ class RemoteCameraActivity : Activity() {
     private lateinit var picture: ImageView
     private lateinit var status: TextView
     private lateinit var save: Button
-    private fun dp(x: Int) = (x * resources.displayMetrics.density).toInt()
+    private val skin by lazy { MonitorScreenSkin(this) }
+    private fun dp(x: Int) = skin.dp(x)
     private val poll = object : Runnable { override fun run() { requestFrame() } }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         host = intent.getStringExtra(EXTRA_HOST).orEmpty()
         method = intent.getStringExtra(EXTRA_METHOD) ?: "Chave salva"
+        skin.applyWindow()
+        val alias = RecentDevices.list(this).firstOrNull { it.host == host }?.name ?: "Aparelho monitorado"
         val body = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(14), dp(14), dp(14), dp(14))
-            setBackgroundColor(Color.rgb(17, 25, 37))
+            setPadding(dp(15), dp(13), dp(15), dp(15))
+            setBackgroundColor(skin.background)
         }
-        body.addView(TextView(this).apply {
-            text = "Câmera remota"
-            textSize = 19f
-            setTextColor(Color.WHITE)
+        body.addView(skin.header(R.drawable.ic_remote_camera, "Câmera ao vivo", alias) { finish() },
+            LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(13) })
+        val summary = skin.card()
+        summary.addView(skin.badge("● CÂMERA REMOTA · JPEG", false), LinearLayout.LayoutParams(-2, -2).apply {
+            bottomMargin = dp(8)
         })
-        status = TextView(this).apply {
-            text = "Aguardando o monitorado abrir Câmera compartilhada…"
-            textSize = 13f
-            setTextColor(Color.LTGRAY)
-            setPadding(0, dp(9), 0, dp(12))
+        status = skin.label("Aguardando câmera compartilhada no monitorado…", 12.5f)
+        summary.addView(status)
+        body.addView(summary, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
+        val preview = FrameLayout(this).apply {
+            background = skin.rounded(Color.rgb(6, 12, 22), 20)
+            clipToOutline = true
         }
-        body.addView(status)
         picture = ImageView(this).apply {
             scaleType = ImageView.ScaleType.FIT_CENTER
-            setBackgroundColor(Color.BLACK)
             contentDescription = "Prévia JPEG da câmera do aparelho monitorado"
         }
-        body.addView(picture, LinearLayout.LayoutParams(-1, 0, 1f))
-        val buttons = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER }
-        save = Button(this).apply { text = "Salvar foto"; isAllCaps = false; isEnabled = false; setOnClickListener { saveStill() } }
-        buttons.addView(save, LinearLayout.LayoutParams(0, dp(54), 1f))
-        switchCameraButton = Button(this).apply {
-            text = "Trocar câmera"; isAllCaps = false; isEnabled = false
-            setOnClickListener { requestSwitch() }
+        preview.addView(picture, FrameLayout.LayoutParams(-1, -1))
+        body.addView(preview, LinearLayout.LayoutParams(-1, 0, 1f))
+        val buttons = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
         }
-        buttons.addView(switchCameraButton, LinearLayout.LayoutParams(0, dp(54), 1f))
-        body.addView(buttons)
-        body.addView(Button(this).apply {
-            text = "Voltar"; isAllCaps = false; setOnClickListener { finish() }
-        }, LinearLayout.LayoutParams(-1, dp(48)))
-        body.addView(TextView(this).apply {
-            text = "JPEG sob demanda (~1 quadro/s). Sem áudio ou gravação. A troca remota só fica disponível se o monitorado marcar a autorização nesta sessão, mantendo a câmera aberta e visível."
-            textSize = 12f
-            setTextColor(Color.LTGRAY)
-            setPadding(0, dp(9), 0, 0)
+        save = skin.button("Salvar quadro", false) { saveStill() }.apply { isEnabled = false }
+        buttons.addView(save, LinearLayout.LayoutParams(0, dp(50), 1f))
+        switchCameraButton = skin.button("Trocar câmera", true) { requestSwitch() }.apply { isEnabled = false }
+        buttons.addView(switchCameraButton, LinearLayout.LayoutParams(0, dp(50), 1f).apply { leftMargin = dp(8) })
+        body.addView(buttons, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
+        body.addView(skin.label("Imagem sob demanda. Sem gravação e sem áudio. A troca de lente exige permissão da sessão no monitorado.", 11f).apply {
+            setPadding(dp(2), dp(11), dp(2), 0)
+            maxLines = 3
         })
         setContentView(body)
     }

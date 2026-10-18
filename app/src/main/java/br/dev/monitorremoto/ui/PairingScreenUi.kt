@@ -41,10 +41,10 @@ internal fun MainActivity.showSavedDeviceOptions(item: RecentDevices.Device) {
 internal fun MainActivity.showConnectionChooser() {
     RecentDevices.migrateLegacy(this)
     val (wrapper, layout) = dialogWrapper()
-    dialogIntro(layout, "Escolha como conectar. Use o QR Code para um pareamento temporário ou digite IP e chave.")
+    dialogIntro(layout, "Selecione um método de pareamento seguro.")
     var chooser: AlertDialog? = null
     val choices = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-    choices.addView(iconTile(R.drawable.ic_qr, "QR Code", "Ler com a câmera", featured = true) {
+    choices.addView(iconTile(R.drawable.ic_qr, "QR Code", "Parear com câmera", featured = true) {
         chooser?.dismiss()
         startQrScanner()
     }, LinearLayout.LayoutParams(0, -2, 1f))
@@ -54,13 +54,15 @@ internal fun MainActivity.showConnectionChooser() {
         showManualConnectionDialog()
     }, LinearLayout.LayoutParams(0, -2, 1f))
     layout.addView(choices)
-    sectionGap(layout, 16)
-    layout.addView(iconSectionHeader(R.drawable.ic_phone, "Aparelhos anteriores", "Conecte-se usando credenciais salvas"))
+    sectionGap(layout, 8)
+    layout.addView(label("🔒 Chave individual por aparelho. Nenhuma conexão é feita sem autenticação.", 11f, muted = true))
+    sectionGap(layout, 14)
+    layout.addView(iconSectionHeader(R.drawable.ic_phone, "Aparelhos salvos", "Toque em Conectar para consultar novamente"))
     sectionGap(layout, 10)
     val devices = RecentDevices.list(this)
     if (devices.isEmpty()) {
         val empty = panel(14).apply { background = shape(fieldColor, 18) }
-        empty.addView(label("Nenhum aparelho salvo.", 12f, muted = true))
+        empty.addView(iconSectionHeader(R.drawable.ic_phone, "Nenhum aparelho salvo", "Use QR Code ou conexão manual para começar."))
         layout.addView(empty)
     }
     devices.forEach { item ->

@@ -8,7 +8,35 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.94 / versionCode 94** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.98 / versionCode 98** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Interface de conexão e pareamento alpha.98
+
+- **Conexão:** indicador de estado compacto, com leitura e latência real quando disponível, sem alterar consulta a cada 15 segundos.
+- **Pareamento:** QR Code, conexão manual e aparelhos salvos mantidos, com apresentação resumida e orientação mais clara.
+- **Detalhes do aparelho:** cabeçalho e resumo da idade dos dados reutilizam `MonitorScreenSkin`, mantendo as seções técnicas e a proteção de informações sensíveis.
+- **ADB:** cabeçalho visual compartilhado, cartões compactos, identidade de conexão mais legível, ações avançadas organizadas. Nenhum comando, permissão ou pareamento mudou.
+- Build Android completo e inspeção em dois aparelhos pendentes.
+
+## Nova apresentação de tela remota, SMS e notificações alpha.97
+
+- **Ver tela** ganha cabeçalho do kit `MonitorScreenSkin`, barra de ações separada e cartão de sessão com origem autenticada, evitando apertar o título em aparelhos pequenos. Controles de navegação e tela cheia continuam presentes.
+- **Mensagens e notificações** recebem cabeçalho e painel de privacidade próprios, cartões individuais mais legíveis, estados vazios contextualizados e títulos de grupos mais claros.
+- A janela **Responder mensagem** usa o recipiente central modernizado e ainda exige revisão, filtragem de conteúdo sensível e confirmação separada para enviar.
+- Nenhum protocolo, permissão Android, regra de captura de tela, permissão de mensagem ou confirmação foi alterado. Build Android e revisão visual no dispositivo ainda pendentes.
+
+## Modernização de captura e mapas alpha.96
+
+- `ui/MonitorScreenSkin.kt` introduz cabeçalho com ícone, área de retorno acessível, cartões de estado, indicadores e botões com o mesmo estilo em telas nativas independentes.
+- Foto remota: título e identificação compactos, estado destacado e prévia escura; captura JPEG única, zoom, salvar e compartilhar preservados.
+- Preparação da foto e câmera compartilhada do monitorado: instruções e status padronizados, mantendo consentimento local obrigatório.
+- Câmera ao vivo do controlador: sai do visual escuro rígido e passa a usar tema do aplicativo, tela de imagem e comandos consistentes; não altera o streaming JPEG e não grava automaticamente.
+- Localização: cabeçalho e controles harmonizados com as telas de captura; mantém o mapa, os estados GPS e o acompanhamento seguro já existentes.
+- Sem mudanças em protocolos, armazenamento, permissões Android nem comandos remotos. Build Android e aparência real ainda dependem do GitHub Actions e dos aparelhos.
+
+## Melhorias visuais alpha.95
+
+Ações de arquivos, ordenação, downloads interrompidos e detalhes de aplicativos usam `MonitorActionSheet`, um menu inferior comum com ícones e estados destrutivos. Configurações ganham agrupamento mais compacto, mantendo pesquisa e consentimentos existentes. Nenhuma ampliação de permissões ou comandos remotos. A modernização dos diálogos especializados restantes seguirá por etapas, após validar a alpha.95 no hardware.
 
 ## Modernização visual: alpha.94
 

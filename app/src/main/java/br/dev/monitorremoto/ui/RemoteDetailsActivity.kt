@@ -118,41 +118,38 @@ class RemoteDetailsActivity : Activity() {
         wrapper.addView(root)
         setContentView(wrapper)
 
-        val toolbar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        val back = icon(R.drawable.ic_back, 24).apply {
-            background = drawable(cardBg, 13, true)
-            setPadding(dp(11), dp(11), dp(11), dp(11))
-            contentDescription = "Voltar ao painel de controle"
-            isFocusable = true; isClickable = true
-            setOnClickListener { finish() }
-        }
-        toolbar.addView(back, LinearLayout.LayoutParams(dp(48), dp(48)))
-        toolbar.addView(View(this), LinearLayout.LayoutParams(dp(12), 1))
-        val heading = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        heading.addView(text("Detalhes do aparelho", 21f, bold = true))
-        heading.addView(gap(4))
-        heading.addView(text(device, 12f, muted = true))
-        toolbar.addView(heading, LinearLayout.LayoutParams(0, -2, 1f))
-        root.addView(toolbar)
+        val skin = MonitorScreenSkin(this)
+        root.addView(skin.header(R.drawable.ic_info, "Detalhes do aparelho", device) { finish() })
         root.addView(gap(14))
-        root.addView(text("Última consulta: ${time(received)}", 11.5f, muted = true))
-        root.addView(gap(16))
+        val readingCard = skin.card()
+        val readingRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val securityIcon = icon(R.drawable.ic_shield, 20, teal)
+        readingRow.addView(securityIcon)
+        readingRow.addView(View(this), LinearLayout.LayoutParams(dp(10), 1))
+        val readingText = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        readingText.addView(text("Dados da última consulta", 13.5f, bold = true))
+        readingText.addView(gap(4))
+        readingText.addView(text(time(received), 11.5f, muted = true))
+        readingRow.addView(readingText, LinearLayout.LayoutParams(0, -2, 1f))
+        readingCard.addView(readingRow)
+        root.addView(readingCard)
+        root.addView(gap(12))
 
         fun section(iconId: Int, title: String, compose: (LinearLayout) -> Unit) {
             val card = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 background = drawable(cardBg, 22, true)
-                setPadding(dp(16), dp(17), dp(16), dp(17))
+                setPadding(dp(15), dp(14), dp(15), dp(14))
             }
             val titleRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
             titleRow.addView(icon(iconId, 22, teal))
             titleRow.addView(View(this), LinearLayout.LayoutParams(dp(10), 1))
             titleRow.addView(text(title, 16f, bold = true))
             card.addView(titleRow)
-            card.addView(gap(16))
+            card.addView(gap(12))
             compose(card)
             root.addView(card)
-            root.addView(gap(13))
+            root.addView(gap(10))
         }
         fun cell(label: String, value: String): LinearLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL

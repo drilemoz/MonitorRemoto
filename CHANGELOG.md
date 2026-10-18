@@ -1,3 +1,29 @@
+## 0.1.0-alpha.98 (versionCode 98) | 17/10/2026
+- Modernização de conexão, pareamento QR/manual/salvos, detalhes do aparelho e tela ADB com o kit visual comum.
+- Indicador de conexão compacto, cabeçalho ADB com ícone, cartões e hierarquia de botões refinados; dados técnicos mantidos acessíveis.
+- Preservadas credenciais, fluxos de QR, ADB/TLS, confirmação de comandos e proteção FLAG_SECURE dos dados sensíveis.
+- Atualizados Gradle, AppVersion, Novidades, notas, README e verificações estruturais. Build Android/visual físico pendentes.
+
+## 0.1.0-alpha.97 (versionCode 97) | 17/10/2026
+- Ver tela: cabeçalho e quadro de conexão com o novo kit, mantendo opções JPEG/H.264, tela cheia, toque, áudio e autorização local sem alterações.
+- Mensagens e Notificações: painéis compactos, estado protegido e conteúdo temporário, cartões por mensagem e notificação, ícones e estados vazios modernizados.
+- Resposta SMS/notificação: diálogo central unificado, seleção opcional de chip e verificação de conteúdo sensível com confirmação antes do comando.
+- Verificador ganha regressões para esses componentes. Compilação Android e testes visuais em hardware pendentes.
+
+## 0.1.0-alpha.96 (versionCode 96) | 17/10/2026
+- Criado `MonitorScreenSkin` para telas independentes com cores, cartões, indicadores, botões e cabeçalhos unificados nos temas claro/escuro/sistema.
+- Redesenhadas Foto remota, Preparar foto no monitorado, Câmera ao vivo (controlador), Câmera compartilhada (monitorado) e cabeçalho/controles da Localização.
+- Mantidas regras de Camera2, consentimento local, encerramento de captura, transmissão e pareamento, sem novas permissões ou novos comandos.
+- Adicionada regressão ao verificador estrutural; Gradle/Android completo e inspeção de UI real continuam pendentes.
+
+## 0.1.0-alpha.95 (versionCode 95) | 17/10/2026
+- Sistema visual compartilhado `MonitorActionSheet` para menus contextuais: cabeçalho, ícones, descrições curtas, destaque de ações destrutivas, fechamento acessível e rolagem com limite de altura.
+- Gerenciador de arquivos: ações de arquivo/pasta, ordenação e downloads interrompidos usam novo painel inferior. Exclusão/lixeira mantêm confirmação independente e permissões da origem.
+- Aplicativos: detalhes agora possuem opções com ícones, favoritos e explicação clara dos requisitos ADB. Ações ADB seguem com suas confirmações.
+- Configurações: topo com ícone, grupo pesquisável mais compacto e ícones com fundo próprio.
+- Diálogos remanescentes de Arquivos agora usam o tema claro/escuro compartilhado. Nenhuma alteração de chave, protocolo, permissões ou operações remotas.
+- Testes estruturais e sintaxe Kotlin locais não substituem compilação Android no GitHub Actions e teste no aparelho.
+
 ## 0.1.0-alpha.94 (versionCode 94) | 17/10/2026
 - Novo `MonitorVisualKit`: cabeçalhos com ícone em degradê, linhas de ação, chips de estado e avisos compactos reutilizáveis.
 - Energia e manutenção refeito como diálogo central de largura responsiva: aparelho identificado, 3 ações com ícones, separação clara da opção que requer ADB, aviso breve e fechamento acessível.

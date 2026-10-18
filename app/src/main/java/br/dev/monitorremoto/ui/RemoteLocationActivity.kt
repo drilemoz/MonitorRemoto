@@ -1,5 +1,7 @@
 package br.dev.monitorremoto.ui
 
+import br.dev.monitorremoto.R
+
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.ClipData
@@ -44,6 +46,7 @@ class RemoteLocationActivity : Activity() {
         private val RATE_LABELS = arrayOf("5 s", "10 s", "15 s", "30 s", "60 s")
     }
 
+    private val skin by lazy { MonitorScreenSkin(this) }
     private val main = Handler(Looper.getMainLooper())
     private var generation = 0
     private var host = ""
@@ -103,15 +106,15 @@ class RemoteLocationActivity : Activity() {
         "system" -> resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
         else -> false
     }
-    private val ink get() = if (dark) Color.WHITE else Color.rgb(27, 39, 54)
-    private val dim get() = if (dark) Color.rgb(178, 189, 203) else Color.rgb(104, 114, 129)
+    private val ink get() = skin.foreground
+    private val dim get() = skin.muted
     private val subtle get() = if (dark) Color.rgb(95, 108, 125) else Color.rgb(123, 134, 149)
-    private val surface get() = if (dark) Color.rgb(28, 39, 54) else Color.WHITE
-    private val surfaceAlt get() = if (dark) Color.rgb(20, 30, 42) else Color.rgb(241, 245, 248)
-    private val accent get() = Color.rgb(31, 172, 160)
+    private val surface get() = skin.surface
+    private val surfaceAlt get() = skin.secondary
+    private val accent get() = skin.accent
     private val warn get() = Color.rgb(211, 125, 39)
     private val danger get() = Color.rgb(189, 71, 71)
-    private val bg get() = if (dark) Color.rgb(14, 22, 32) else Color.rgb(247, 248, 251)
+    private val bg get() = skin.background
     private fun dp(n: Int) = (resources.displayMetrics.density * n).toInt()
     private fun rounded(color: Int, corner: Int = 16, strokeColor: Int? = null) = GradientDrawable().apply {
         shape = GradientDrawable.RECTANGLE
@@ -140,18 +143,7 @@ class RemoteLocationActivity : Activity() {
         chip.background = rounded(Color.argb(if (dark) 60 else 24,
             Color.red(color), Color.green(color), Color.blue(color)), 99)
     }
-    private fun button(title: String, click: () -> Unit) = Button(this).apply {
-        text = title
-        isAllCaps = false
-        textSize = 12.5f
-        minWidth = 0
-        setTextColor(ink)
-        background = rounded(surface, 14, if (dark) Color.rgb(51, 66, 84) else Color.rgb(225, 231, 236))
-        elevation = 0f
-        stateListAnimator = null
-        setPadding(dp(8), 0, dp(8), 0)
-        setOnClickListener { click() }
-    }
+    private fun button(title: String, click: () -> Unit) = skin.button(title, false, click)
     private fun actions(parent: LinearLayout, vararg buttons: Button) {
         val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         buttons.forEachIndexed { i, b ->
@@ -167,11 +159,7 @@ class RemoteLocationActivity : Activity() {
         intervalMs = prefs.getLong("refresh_interval_ms", 10_000L).takeIf { it in RATES } ?: 10_000L
         mapOnline = prefs.getBoolean(tileConsentKey, false)
 
-        window.statusBarColor = bg
-        window.navigationBarColor = bg
-        @Suppress("DEPRECATION")
-        window.decorView.systemUiVisibility = if (dark) 0 else View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-
+        skin.applyWindow()
         val outer = ScrollView(this).apply { setBackgroundColor(bg); isFillViewport = true }
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -182,27 +170,10 @@ class RemoteLocationActivity : Activity() {
 
         val title = RecentDevices.list(this).firstOrNull { it.host == host }?.name ?: "Aparelho remoto"
 
-        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        val back = text("‹", 26f, true, ink).apply {
-            setPadding(0, dp(6), dp(12), dp(6))
-            setOnClickListener { finish() }
-            isClickable = true
-            isFocusable = true
-            contentDescription = "Voltar ao painel"
-        }
-        val titleCol = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        titleCol.addView(text("Localização", 22f, true))
-        titleLine = text("$title · consulta protegida", 12.5f, false, dim)
-        titleCol.addView(titleLine)
-        header.addView(back)
-        header.addView(titleCol, LinearLayout.LayoutParams(0, -2, 1f))
+        val header = skin.header(R.drawable.ic_pin, "Localização", "$title · consulta protegida") { finish() }
+        titleLine = TextView(this).apply { visibility = View.GONE }
         content.addView(header)
-
-        val hero = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(14), dp(14), dp(14), dp(14))
-            background = rounded(surface, 20)
-        }
+        val hero = skin.card()
         val heroTop = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val pin = TextView(this).apply {
             text = "⌖"
@@ -308,7 +279,7 @@ class RemoteLocationActivity : Activity() {
         actions(content, automaticButton, openMap, copy)
         updateAutomaticLabel()
 
-        content.addView(text("© OpenStreetMap contributors · blocos online opcionais e cache local. A localização só é mostrada quando o monitorado a informar.", 10.5f, false, subtle).apply {
+        content.addView(text("© OpenStreetMap contributors · os mapas online são opcionais. Toque para ver os créditos.", 10.5f, false, subtle).apply {
             setPadding(dp(2), dp(8), dp(2), 0)
             setOnClickListener { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.openstreetmap.org/copyright"))) }
         })
