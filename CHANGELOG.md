@@ -1,3 +1,9 @@
+## 0.1.0-alpha.100 (versionCode 100) | 17/10/2026
+- Corrige os três erros de Kotlin no workflow "Gerar APK e Release 87" (alpha.99), tarefa `:app:compileDebugKotlin`, em `MonitorScreenSkin.kt:43`, `:53` e `:73`.
+- Dentro dos escopos `TextView.apply`, `Button.apply` e `ImageView.apply`, `foreground` era a propriedade `View.foreground` do tipo `Drawable`; as chamadas de cor requerem `Int`. Referência explícita `this@MonitorScreenSkin.foreground` resolve a colisão.
+- Adicionada regressão em `tools/check_distribution.py`; mantidos identidade visual, autenticação, comandos e permissões.
+- Validação sintática/estrutural local; compilação Gradle/Android ainda pendente em CI.
+
 ## 0.1.0-alpha.99 (versionCode 99) | 17/10/2026
 - Corrige o erro de vinculação de recursos `:app:processDebugResources` registrado no workflow "Gerar APK e Release 86" da alpha.98: `android:windowDimAmount` não existe como atributo de tema Android.
 - Os temas personalizados claro e escuro usam agora `android:backgroundDimAmount` (atributo Android válido) e preservam os valores originais de escurecimento de fundo (0.58 / 0.66).

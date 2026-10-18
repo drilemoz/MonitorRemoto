@@ -16,7 +16,7 @@ assert match, "versionName ausente"
 version = match.group(1)
 code = re.search(r'\bversionCode\s*=\s*(\d+)', gradle)
 assert code, "versionCode ausente"
-assert version == "0.1.0-alpha.99" and code.group(1) == "99", "Versões incompatíveis"
+assert version == "0.1.0-alpha.100" and code.group(1) == "100", "Versões incompatíveis"
 appver = (root / 'app/src/main/java/br/dev/monitorremoto/transport/AppVersion.kt').read_text()
 assert f'const val NAME = "{version}"' in appver, "AppVersion fora de sincronia com o Gradle"
 assert 'AppVersion.NAME' in ui, "Tela de versão desatualizada"
@@ -1413,3 +1413,16 @@ for style_name, value in [('MonitorDialogLight', '0.58'), ('MonitorDialogDark', 
 for xml in (root / 'app/src/main/res').rglob('*.xml'):
     assert 'android:windowDimAmount' not in xml.read_text(encoding='utf-8'), f'Atributo Android inexistente em {xml}'
 print('PASSOU: alpha.99 temas claro/escuro com backgroundDimAmount válido e regressão de AAPT2.')
+
+# Alpha.100: compila corretamente as cores no escopo de View.apply (build CI 87).
+# Dentro de TextView/Button/ImageView.apply, `foreground` sem receptor resolve
+# para View.foreground: Drawable, não para a cor Int do MonitorScreenSkin.
+skin100 = (ui_root / 'MonitorScreenSkin.kt').read_text(encoding='utf-8')
+assert skin100.count('this@MonitorScreenSkin.foreground') == 3, 'As 3 cores de texto/ícone devem usar receptor externo'
+assert 'setTextColor(if (emphasis) this@MonitorScreenSkin.foreground else muted)' in skin100
+assert 'setTextColor(if (primary) Color.WHITE else this@MonitorScreenSkin.foreground)' in skin100
+assert 'imageTintList = ColorStateList.valueOf(this@MonitorScreenSkin.foreground)' in skin100
+assert 'setTextColor(if (emphasis) foreground else muted)' not in skin100
+assert 'setTextColor(if (primary) Color.WHITE else foreground)' not in skin100
+assert 'ColorStateList.valueOf(foreground)' not in skin100
+print('PASSOU: alpha.100 não confunde View.foreground (Drawable) com cor Int no MonitorScreenSkin.')

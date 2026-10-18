@@ -1,3 +1,10 @@
+# Monitor Remoto v0.1.0-alpha.100 · Correção do build 87
+
+- `MonitorScreenSkin.kt` corrigido em três usos de `foreground`: `TextView`, `Button` e `ImageView` agora usam explicitamente a cor `Int` do kit visual, em vez do `Drawable` herdado de `View`.
+- Resolvida a causa dos erros mostrados em `:app:compileDebugKotlin` no workflow "Gerar APK e Release 87".
+- Mantidas as mesmas cores e o design; comportamento remoto, AES-GCM, ADB, permissões e confirmações inalterados.
+- Adicionada regressão ao verificador. Build Android real ainda depende de GitHub Actions.
+
 # Monitor Remoto v0.1.0-alpha.99 · Correção do build 86
 
 - Corrigido o atributo inválido `android:windowDimAmount` nos temas de diálogo, responsável pela falha AAPT2 em `:app:processDebugResources` da alpha.98.

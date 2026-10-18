@@ -40,7 +40,7 @@ internal class MonitorScreenSkin(private val activity: Activity) {
     fun label(value: String, size: Float, emphasis: Boolean = false): TextView = TextView(activity).apply {
         text = value
         textSize = size
-        setTextColor(if (emphasis) foreground else muted)
+        setTextColor(if (emphasis) this@MonitorScreenSkin.foreground else muted)
         includeFontPadding = false
         if (emphasis) setTypeface(null, Typeface.BOLD)
     }
@@ -50,7 +50,7 @@ internal class MonitorScreenSkin(private val activity: Activity) {
         textSize = 13f
         minHeight = dp(48)
         minWidth = 0
-        setTextColor(if (primary) Color.WHITE else foreground)
+        setTextColor(if (primary) Color.WHITE else this@MonitorScreenSkin.foreground)
         background = rounded(if (primary) accent else secondary, 15, !primary)
         elevation = 0f
         stateListAnimator = null
@@ -70,7 +70,7 @@ internal class MonitorScreenSkin(private val activity: Activity) {
             gravity = Gravity.CENTER_VERTICAL
             val back = ImageView(activity).apply {
                 setImageResource(R.drawable.ic_back)
-                imageTintList = ColorStateList.valueOf(foreground)
+                imageTintList = ColorStateList.valueOf(this@MonitorScreenSkin.foreground)
                 background = rounded(secondary, 14)
                 scaleType = ImageView.ScaleType.CENTER_INSIDE
                 setPadding(dp(12), dp(12), dp(12), dp(12))

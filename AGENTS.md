@@ -1,3 +1,10 @@
+# Monitor Remoto 0.1.0-alpha.100
+
+- Correção do workflow "Gerar APK e Release 87" (alpha.99): `:app:compileDebugKotlin` falhou por colisão de nome em `MonitorScreenSkin.kt` entre a cor `foreground: Int` e `View.foreground: Drawable` nos blocos `.apply`. Qualificar as três referências como `this@MonitorScreenSkin.foreground`.
+- Manter o teste regressivo `tools/check_distribution.py`. Depois de editar UI com `.apply`, verificar colisões entre os nomes de propriedades das views Android e os nomes do kit visual.
+- Preservar modernização, dados do monitorado, autenticação, pareamento, fluxos de consentimento e ações ADB. Próxima versão sequencial: 0.1.0-alpha.101 / versionCode 101.
+- Este ZIP requer build Android completo em CI para validação final.
+
 # Monitor Remoto 0.1.0-alpha.99
 
 - Corrigido workflow "Gerar APK e Release 86" (alpha.98): falha `:app:processDebugResources` por uso inválido de `android:windowDimAmount` em `res/values/monitor_dialog_styles.xml`. Usar `android:backgroundDimAmount` nos temas `MonitorDialogLight` e `MonitorDialogDark`.

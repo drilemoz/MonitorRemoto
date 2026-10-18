@@ -15,9 +15,9 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "Bem-vindo à atualização"))
     sectionGap(layout, 10)
     val entries = listOf(
-        "Compilação corrigida" to "Corrigido o atributo Android dos novos temas de diálogo que impedia gerar o APK.",
-        "Pop-ups preservados" to "Mantidos os cartões, ícones, fundos e escurecimento do tema claro e escuro.",
-        "Conexão e ADB" to "As melhorias da versão anterior permanecem, com pareamento e confirmações intactos."
+        "Compilação Kotlin" to "Corrigido o conflito entre a cor do aplicativo e a propriedade foreground do Android.",
+        "Aparência preservada" to "As cores, cartões, botões e ícones da modernização continuam iguais.",
+        "Segurança mantida" to "Pareamento, comandos ADB e confirmações não foram alterados."
     )
     entries.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))

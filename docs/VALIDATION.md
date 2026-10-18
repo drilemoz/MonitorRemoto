@@ -1,3 +1,9 @@
+## Alpha.100 (17/10/2026)
+
+- Logs do workflow "Gerar APK e Release 87" conferidos: falha real em `:app:compileDebugKotlin`, `MonitorScreenSkin.kt` linhas 43/53/73. Etapas de recursos Android foram concluídas.
+- Referências de cor qualificadas como `this@MonitorScreenSkin.foreground` em todas as três ocorrências, com teste regressivo estrutural e versionamento sequencial.
+- [ ] Reexecutar `:app:compileDebugKotlin`, testes e APK Android em GitHub Actions; verificar aparência e regressão nos dois aparelhos.
+
 ## Alpha.99 (17/10/2026)
 
 - Log workflow `Gerar APK e Release 86`: falha em `:app:processDebugResources`, antes da etapa de compilação Kotlin. AAPT2 rejeitou `android:windowDimAmount` duas vezes.

@@ -8,7 +8,17 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.99 / versionCode 99** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.100 / versionCode 100** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Correção do workflow 87 (alpha.100)
+
+O workflow #87 passou pela compilação de recursos, mas falhou em `:app:compileDebugKotlin` no
+`MonitorScreenSkin.kt` (linhas 43, 53 e 73). Dentro de `TextView.apply`, `Button.apply` e
+`ImageView.apply`, o nome `foreground` era capturado por `View.foreground: Drawable`, quando
+o código precisava da propriedade `MonitorScreenSkin.foreground: Int` (cor ARGB).
+As três ocorrências agora usam `this@MonitorScreenSkin.foreground`; não há alteração de cores,
+de captura, credenciais, ADB, transporte ou permissões. Acrescentada regressão estrutural.
+O APK ainda requer nova execução da CI.
 
 ## Correção do workflow 86 (alpha.99)
 
