@@ -1,3 +1,10 @@
+# Monitor Remoto 0.1.0-alpha.99
+
+- Corrigido workflow "Gerar APK e Release 86" (alpha.98): falha `:app:processDebugResources` por uso inválido de `android:windowDimAmount` em `res/values/monitor_dialog_styles.xml`. Usar `android:backgroundDimAmount` nos temas `MonitorDialogLight` e `MonitorDialogDark`.
+- O verificador `tools/check_distribution.py` deve proteger a regressão. Não alterar temas para atributos de plataforma sem confirmar a existência no SDK usado pelo projeto.
+- Preservadas as mudanças visuais até a alpha.98 e os controles de segurança. Próxima versão: alpha.100 / versionCode 100. Exigir ambos os aparelhos com mesma versão.
+- Ainda pendente reexecutar Android/Gradle na CI; a validação de XML e PSI local não substitui o build completo.
+
 # Monitor Remoto 0.1.0-alpha.98
 
 - Alpha.98 refina visualmente ConnectionScreenUi, PairingScreenUi, RemoteDetailsActivity e AdbActivity. Preservar a criptografia, QR temporário, pareamento manual, credenciais salvas, comandos ADB fixos, confirmações e FLAG_SECURE.

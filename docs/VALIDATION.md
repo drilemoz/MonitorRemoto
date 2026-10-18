@@ -1,3 +1,10 @@
+## Alpha.99 (17/10/2026)
+
+- Log workflow `Gerar APK e Release 86`: falha em `:app:processDebugResources`, antes da etapa de compilação Kotlin. AAPT2 rejeitou `android:windowDimAmount` duas vezes.
+- Fonte corrigida: `res/values/monitor_dialog_styles.xml` usa `android:backgroundDimAmount` (0.58/0.66); temas e seus drawables preservados.
+- Incluída regressão em `tools/check_distribution.py` para validar os dois estilos, valor de escurecimento, fundo e ausência do atributo inválido em todo `res`.
+- Build Android completo via Gradle ainda não executado; CI e testes visuais pendentes.
+
 ## Alpha.91 | 17/10/2026
 - [x] Validador estrutural com novas invariantes de temperatura e ADB.
 - [ ] Compilação Gradle/Android, teste das leituras reais e validação visual da janela central.

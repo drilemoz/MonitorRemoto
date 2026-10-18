@@ -1,3 +1,11 @@
+# Monitor Remoto v0.1.0-alpha.99 · Correção do build 86
+
+- Corrigido o atributo inválido `android:windowDimAmount` nos temas de diálogo, responsável pela falha AAPT2 em `:app:processDebugResources` da alpha.98.
+- Os estilos claro e escuro continuam com a mesma cor de fundo, arredondamento e intensidade de escurecimento usando `android:backgroundDimAmount`.
+- Adicionada verificação automática de regressão para o recurso XML.
+- Funcionalidades, criptografia, permissões e interface das versões anteriores preservadas.
+- Validação Gradle Android e teste em dispositivo permanecem pendentes até nova execução do workflow.
+
 # Monitor Remoto v0.1.0-alpha.98 · Conexão, pareamento, detalhes e ADB
 
 - Tela de controle com estado de conexão compacto, latência e hora da última consulta já obtidas de respostas reais.

@@ -16,7 +16,7 @@ assert match, "versionName ausente"
 version = match.group(1)
 code = re.search(r'\bversionCode\s*=\s*(\d+)', gradle)
 assert code, "versionCode ausente"
-assert version == "0.1.0-alpha.98" and code.group(1) == "98", "Versões incompatíveis"
+assert version == "0.1.0-alpha.99" and code.group(1) == "99", "Versões incompatíveis"
 appver = (root / 'app/src/main/java/br/dev/monitorremoto/transport/AppVersion.kt').read_text()
 assert f'const val NAME = "{version}"' in appver, "AppVersion fora de sincronia com o Gradle"
 assert 'AppVersion.NAME' in ui, "Tela de versão desatualizada"
@@ -1397,3 +1397,19 @@ assert 'skin.header(R.drawable.ic_info' in details98 and 'window.addFlags(Window
 assert 'skin.header(R.drawable.ic_phone' in adb98
 assert all(x in adb98 for x in ['AdbPolicy.newQr(', 'openViewerWithAdb()', 'showMaintenance()', 'showPendingAppAction()', 'disconnect()', 'showControls()'])
 print('PASSOU: alpha.98 conexão, pareamento, detalhes e ADB visualmente padronizados.')
+
+# Alpha.99: bloqueia atributo inexistente no SDK Android, causador de AAPT2 no build 86.
+# O dim pertence ao tema da janela, nao a um suposto atributo "windowDimAmount".
+import xml.etree.ElementTree as ET
+style_path = root / "app/src/main/res/values/monitor_dialog_styles.xml"
+styles_tree = ET.parse(style_path)
+style_map = {node.attrib.get('name'): node for node in styles_tree.getroot().findall('style')}
+assert {'MonitorDialogLight', 'MonitorDialogDark'} <= style_map.keys(), 'Temas de diálogo ausentes'
+for style_name, value in [('MonitorDialogLight', '0.58'), ('MonitorDialogDark', '0.66')]:
+    items = {item.attrib.get('name'): (item.text or '').strip() for item in style_map[style_name].findall('item')}
+    assert 'android:windowDimAmount' not in items, f'Atributo inexistente reapareceu em {style_name}'
+    assert items.get('android:backgroundDimAmount') == value, f'Dim inválido para {style_name}'
+    assert 'android:windowBackground' in items, f'Fundo de diálogo ausente em {style_name}'
+for xml in (root / 'app/src/main/res').rglob('*.xml'):
+    assert 'android:windowDimAmount' not in xml.read_text(encoding='utf-8'), f'Atributo Android inexistente em {xml}'
+print('PASSOU: alpha.99 temas claro/escuro com backgroundDimAmount válido e regressão de AAPT2.')

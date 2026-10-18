@@ -1,4 +1,4 @@
-# Monitor Remoto v0.1.0-alpha.91
+# Monitor Remoto v0.1.0-alpha.99
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,11 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.98 / versionCode 98** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.99 / versionCode 99** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Correção do workflow 86 (alpha.99)
+
+A alpha.98 não compilou devido a `android:windowDimAmount` nas folhas de estilo de diálogos. A alpha.99 usa o atributo válido `android:backgroundDimAmount` em claro e escuro sem alterar os diálogos ou seus comandos. Antes de instalar, confirme que o novo workflow concluiu `:app:assembleDebug` e os testes; mantenha a mesma versão nos dois celulares.
 
 ## Interface de conexão e pareamento alpha.98
 

@@ -1,3 +1,9 @@
+## 0.1.0-alpha.99 (versionCode 99) | 17/10/2026
+- Corrige o erro de vinculação de recursos `:app:processDebugResources` registrado no workflow "Gerar APK e Release 86" da alpha.98: `android:windowDimAmount` não existe como atributo de tema Android.
+- Os temas personalizados claro e escuro usam agora `android:backgroundDimAmount` (atributo Android válido) e preservam os valores originais de escurecimento de fundo (0.58 / 0.66).
+- Regressão estrutural acrescentada para impedir o retorno do atributo incorreto e exigir a existência dos dois temas. Sem mudanças de comportamento, permissões, pareamento, ADB ou transmissão.
+- Validação estática local executada; recompilação Android completa e teste real do diálogo dependem do GitHub Actions.
+
 ## 0.1.0-alpha.98 (versionCode 98) | 17/10/2026
 - Modernização de conexão, pareamento QR/manual/salvos, detalhes do aparelho e tela ADB com o kit visual comum.
 - Indicador de conexão compacto, cabeçalho ADB com ícone, cartões e hierarquia de botões refinados; dados técnicos mantidos acessíveis.
