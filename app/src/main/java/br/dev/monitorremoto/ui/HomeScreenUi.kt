@@ -30,9 +30,19 @@ internal fun MainActivity.renderHome() {
         gap(12)
     }
 
-    content.addView(label("Seus aparelhos", 21f, strong = true))
-    content.addView(label("Escolha como usar o Monitor Remoto.", 12f, muted = true))
-    gap(14)
+    val homeHero = panel(16)
+    homeHero.addView(iconSectionHeader(R.drawable.ic_shield, "Seus aparelhos", "Controle e compartilhamento protegidos"))
+    sectionGap(homeHero, 12)
+    val stateRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+    val localActive = SettingsStore.isMonitorEnabled(this) && MonitorService.isRunning
+    stateRow.addView(statePill(if (localActive) "Monitorado ativo" else "Monitorado inativo", if (localActive) "active" else "neutral"))
+    stateRow.addView(View(this), LinearLayout.LayoutParams(dp(8), 1))
+    stateRow.addView(statePill("Rede local / VPN"))
+    homeHero.addView(stateRow)
+    content.addView(homeHero)
+    gap(15)
+    content.addView(iconSectionHeader(R.drawable.ic_qr, "Acesso rápido", "Escolha o que deseja fazer"))
+    gap(9)
     val shortcuts = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
     twoColumnTiles(shortcuts, listOf(
         iconTile(R.drawable.ic_qr, "Conectar novo aparelho", "QR Code ou IP", featured = true) {
@@ -48,7 +58,7 @@ internal fun MainActivity.renderHome() {
 
     val recent = RecentDevices.list(this)
     val listPanel = panel(16).apply { background = shape(surface, 24, true) }
-    listPanel.addView(iconSectionHeader(R.drawable.ic_phone, "Aparelhos anteriores", "Conexões salvas neste celular"))
+    listPanel.addView(iconSectionHeader(R.drawable.ic_phone, "Aparelhos anteriores", "Chaves salvas, não necessariamente online"))
     sectionGap(listPanel, 14)
     if (recent.isEmpty()) {
         val empty = LinearLayout(this).apply {
@@ -88,10 +98,12 @@ internal fun MainActivity.renderHome() {
             labels.addView(label(item.host, 11.5f, muted = true).apply { setPadding(0, dp(4), 0, 0) })
             heading.addView(labels, LinearLayout.LayoutParams(0, -2, 1f))
             device.addView(heading)
+            sectionGap(device, 7)
+            device.addView(statePill("Pareamento salvo"))
             val lastUsed = if (item.lastSuccessMs > 0L)
                 SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(item.lastSuccessMs))
                 else "ainda sem conexão confirmada"
-            device.addView(label("Última conexão: $lastUsed", 11f, muted = true).apply { setPadding(0, dp(7), 0, dp(8)) })
+            device.addView(label("Último acesso bem-sucedido: $lastUsed", 11f, muted = true).apply { setPadding(0, dp(7), 0, dp(8)) })
             val buttons = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
             buttons.addView(actionButton("Conectar", emphasis = true) { connectSavedDevice(item) },
                 LinearLayout.LayoutParams(0, dp(44), 1f))

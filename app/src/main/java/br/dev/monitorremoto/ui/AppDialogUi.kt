@@ -3,6 +3,8 @@ package br.dev.monitorremoto.ui
 import android.app.AlertDialog
 import android.view.Gravity
 import android.view.View
+import android.widget.RadioButton
+import android.content.res.ColorStateList
 import android.widget.LinearLayout
 import br.dev.monitorremoto.R
 
@@ -11,6 +13,27 @@ internal fun MainActivity.showManagedDialog(dialog: AlertDialog): AlertDialog {
     activeUiDialog?.takeIf { it !== dialog && it.isShowing }?.dismiss()
     activeUiDialog = dialog
     dialog.show()
+    // Janelas com largura controlada, texto legível e botões neutros em qualquer tema.
+    dialog.window?.setLayout(
+        (resources.displayMetrics.widthPixels * 0.92f).toInt().coerceAtMost(dp(520)),
+        android.view.WindowManager.LayoutParams.WRAP_CONTENT
+    )
+    val actionTint = highlight
+    dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.apply {
+        isAllCaps = false
+        setTextColor(actionTint)
+        minimumHeight = dp(48)
+    }
+    dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.apply {
+        isAllCaps = false
+        setTextColor(dim)
+        minimumHeight = dp(48)
+    }
+    dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.apply {
+        isAllCaps = false
+        setTextColor(dim)
+        minimumHeight = dp(48)
+    }
     return dialog
 }
 
@@ -73,3 +96,51 @@ internal fun MainActivity.showAppConfirm(
 ) = showThemedMessageDialog(title, description, icon, confirmText,
     destructive = title.contains("excluir", true) || title.contains("apagar", true) || title.contains("revogar", true),
     secondary = "Cancelar", onPrimary = onConfirm)
+
+/** Seleção visual imediata: destacada e acessível, sem alterar a configuração ao abrir. */
+internal fun MainActivity.showSettingsChoiceDialog(
+    title: String,
+    description: String,
+    items: List<Pair<String, String>>,
+    selected: Int,
+    onSelect: (Int) -> Unit
+) {
+    require(items.isNotEmpty())
+    val (wrapper, layout) = visualDialogContainer()
+    layout.addView(visualHeader(R.drawable.ic_settings, title, description))
+    sectionGap(layout, 12)
+    lateinit var chooser: AlertDialog
+    items.forEachIndexed { index, (name, hint) ->
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            background = shape(if (index == selected) fieldColor else surface, 15,
+                index == selected)
+            minimumHeight = dp(62)
+            setPadding(dp(10), dp(9), dp(9), dp(9))
+            isClickable = true
+            isFocusable = true
+            contentDescription = "$name. $hint. ${if (index == selected) "Selecionado" else "Selecionar"}"
+            setOnClickListener {
+                chooser.dismiss()
+                onSelect(index)
+            }
+        }
+        val labels = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        labels.addView(label(name, 13.5f, strong = true).apply { setPadding(0, 0, 0, 0) })
+        labels.addView(label(hint, 11f, muted = true).apply { setPadding(0, dp(3), 0, 0); maxLines = 2 })
+        row.addView(labels, LinearLayout.LayoutParams(0, -2, 1f))
+        val radio = RadioButton(this).apply {
+            isChecked = index == selected
+            isClickable = false
+            isFocusable = false
+            buttonTintList = ColorStateList.valueOf(highlight)
+            contentDescription = null
+        }
+        row.addView(radio)
+        layout.addView(row)
+        if (index < items.lastIndex) sectionGap(layout, 6)
+    }
+    chooser = themedPopup(this).setView(wrapper).setNegativeButton("Cancelar", null).create()
+    showManagedDialog(chooser)
+}

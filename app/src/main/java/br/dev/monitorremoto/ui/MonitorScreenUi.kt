@@ -17,9 +17,9 @@ import br.dev.monitorremoto.transport.AuthenticatedAccess
 
 /** Tela monitorada: ações agrupadas à direita do cartão, sem botões longos. */
 internal fun MainActivity.renderMonitor() {
-    content.addView(label("Modo monitorado", 21f, strong = true))
-    content.addView(label("Compartilhe dados somente com aparelhos autorizados.", 12f, muted = true))
-    gap(13)
+    content.addView(iconSectionHeader(br.dev.monitorremoto.R.drawable.ic_shield,
+        "Modo monitorado", "Permissões locais e compartilhamento autorizado"))
+    gap(12)
     val enabled = SettingsStore.isMonitorEnabled(this)
     val running = MonitorService.isRunning
     val card = panel(17).apply { background = shape(surface, 24, true) }
@@ -39,13 +39,18 @@ internal fun MainActivity.renderMonitor() {
         MonitorService.isServiceActive -> "● Serviço ativo · rede em recuperação"
         else -> "● Serviço sem execução"
     }
-    headerText.addView(label(state, 12.5f, strong = true).apply {
+    headerText.addView(label(state.removePrefix("● "), 12.5f, strong = true).apply {
         setPadding(0, dp(6), 0, 0)
         setTextColor(if (enabled && running) highlight else if (enabled) Color.rgb(190, 88, 61) else dim)
     })
     header.addView(headerText, LinearLayout.LayoutParams(0, -2, 1f))
     card.addView(header)
-    sectionGap(card, 14)
+    sectionGap(card, 11)
+    card.addView(statePill(
+        if (enabled && running) "Disponível na rede" else if (enabled) "Aguardando serviço" else "Acesso remoto parado",
+        if (enabled && running) "active" else if (enabled) "warning" else "neutral"
+    ))
+    sectionGap(card, 13)
 
     val columns = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
     val details = iconMetric("IP da rede", preferredLocalAddress() ?: "Indisponível", br.dev.monitorremoto.R.drawable.ic_wifi)
@@ -83,23 +88,28 @@ internal fun MainActivity.renderMonitor() {
     val localState = br.dev.monitorremoto.core.DeviceStateReader.snapshot(this)
     val hasUsage = localState.optBoolean("usagePermission")
     val hasWifi = checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
-    val diagCard = panel(12)
+    val diagCard = panel(10)
     diagCard.addView(iconMenuRow(br.dev.monitorremoto.R.drawable.ic_activity,
-        "Estado e permissões do aparelho", "Tela: ${localState.optString("screenState")} · Acesso ao uso: ${if (hasUsage) "ok" else "autorizar"} · Wi-Fi: ${if (hasWifi) "permitido" else "autorizar"}") {
+        "Estado e permissões do aparelho",
+        "Tela: ${localState.optString("screenState")} · Uso: ${if (hasUsage) "ok" else "pendente"} · Localização: ${if (hasWifi) "ok" else "pendente"}",
+        badge = if (hasUsage && hasWifi) SettingsBadgeKind.ACTIVE else SettingsBadgeKind.WARNING,
+        actionLabel = if (hasUsage && hasWifi) "Ver" else "Revisar") {
         openSettingsModule(); openSettingsSection("diagnostics")
     })
     content.addView(diagCard)
     if (enabled && running) {
         gap(9)
-        val shareCard = panel(12)
-        shareCard.addView(label("Compartilhamento da tela", 14f, strong = true))
-        shareCard.addView(label(if (ScreenFrameStore.sharing)
-            "● Sessão ativa · reconexão automática · imagens sob demanda" +
-                (if (br.dev.monitorremoto.capture.AudioChunkStore.enabled) " · áudio interno" else "")
-            else "Inativo · aprovação Android necessária para iniciar nova sessão", 11f, muted = true))
-        sectionGap(shareCard, 5)
-        shareCard.addView(actionButton(if (ScreenFrameStore.sharing) "Parar compartilhamento" else "Compartilhar tela",
-            emphasis = !ScreenFrameStore.sharing) {
+        content.addView(iconSectionHeader(br.dev.monitorremoto.R.drawable.ic_monitor,
+            "Captura e compartilhamento", "Ative somente o recurso necessário"))
+        gap(10)
+        content.addView(monitorFeatureCard(
+            br.dev.monitorremoto.R.drawable.ic_monitor, "Compartilhamento de tela",
+            if (ScreenFrameStore.sharing) "Tela autorizada, com indicação visível no monitorado." else
+                "Exige autorização do Android para cada nova sessão.",
+            if (ScreenFrameStore.sharing) "Em transmissão" else "Desativado",
+            if (ScreenFrameStore.sharing) "active" else "neutral",
+            if (ScreenFrameStore.sharing) "Parar" else "Compartilhar", emphasized = !ScreenFrameStore.sharing
+        ) {
             if (ScreenFrameStore.sharing) {
                 ScreenShareService.stop(this)
                 handler.postDelayed({ if (active && mode == 0) render() }, 300L)
@@ -112,55 +122,54 @@ internal fun MainActivity.renderMonitor() {
                 }
             }
         })
-        content.addView(shareCard)
         gap(9)
-        val cameraCard = panel(12)
-        cameraCard.addView(label("Câmera compartilhada", 14f, strong = true))
-        cameraCard.addView(label(if (br.dev.monitorremoto.capture.CameraFrameStore.isActive())
-            "● Câmera ativa · interrompa na tela de prévia"
-            else "Desativada · somente após abertura local e permissão Android", 11f, muted = true))
-        sectionGap(cameraCard, 5)
-        cameraCard.addView(actionButton("Abrir câmera neste aparelho", emphasis = false) {
+        val cameraRunning = br.dev.monitorremoto.capture.CameraFrameStore.isActive()
+        content.addView(monitorFeatureCard(
+            br.dev.monitorremoto.R.drawable.ic_remote_camera, "Câmera ao vivo",
+            if (cameraRunning) "Prévia visível; a transmissão para ao sair da câmera." else
+                "Abre a câmera localmente, com permissão do Android.",
+            if (cameraRunning) "Ativa" else "Desativada", if (cameraRunning) "active" else "neutral",
+            "Abrir câmera"
+        ) {
             showAppConfirm("Compartilhar câmera ao vivo?",
                 "A câmera ficará aberta somente enquanto a tela de câmera estiver visível neste telefone. Um controlador pareado poderá ver quadros JPEG da câmera frontal ou traseira. Não há áudio ou gravação no monitorado. Voltar ou bloquear a tela interrompe a captura.",
                 confirmText = "Abrir câmera") {
                 startActivity(Intent(this, CameraShareActivity::class.java))
             }
         })
-        content.addView(cameraCard)
         gap(9)
-        val photoCard = panel(12)
-        photoCard.addView(label("Fotografia remota sob demanda", 14f, strong = true))
-        photoCard.addView(label(if (br.dev.monitorremoto.service.PhotoReadyService.armed)
-            "● Sessão armada · foto real sem vídeo contínuo · notificação visível"
-            else "Desarmada · configure antes de deixar este aparelho sem acesso físico", 11f, muted = true))
-        sectionGap(photoCard, 5)
-        photoCard.addView(actionButton(if (br.dev.monitorremoto.service.PhotoReadyService.armed)
-            "Gerenciar / parar foto remota" else "Preparar foto remota", emphasis = false) {
+        val photoArmed = br.dev.monitorremoto.service.PhotoReadyService.armed
+        content.addView(monitorFeatureCard(
+            br.dev.monitorremoto.R.drawable.ic_remote_camera, "Fotografia sob demanda",
+            if (photoArmed) "Pronta para solicitações pontuais autorizadas; notificação visível." else
+                "Prepare uma vez no aparelho para permitir fotografias remotas.",
+            if (photoArmed) "Preparada" else "Desarmada", if (photoArmed) "active" else "warning",
+            if (photoArmed) "Gerenciar" else "Preparar foto"
+        ) {
             startActivity(Intent(this, RemotePhotoSetupActivity::class.java))
         })
-        content.addView(photoCard)
-
     }
     gap(12)
     if (enabled && running) renderIncomingAccess()
-    else content.addView(label("Aguardando ativação do monitoramento.", 12f, muted = true))
+    else content.addView(statePill("Aguardando ativação local"))
     gap(10)
-    addText("Permissões e segurança: ⚙ Configurações.", 11f, muted = true)
+    addText("Permissões e privacidade podem ser revisadas em Configurações.", 11f, muted = true)
 }
 
 /** Event-driven on authenticated requests, plus timeout refresh for disconnected clients. */
 private fun MainActivity.renderIncomingAccess() {
     val peers = AuthenticatedAccess.recent()
-    val card = panel(12)
+    val card = panel(13)
+    card.addView(iconSectionHeader(br.dev.monitorremoto.R.drawable.ic_shield,
+        "Acessos autenticados", "Atividade recente, não conexão permanente"))
+    sectionGap(card, 10)
     if (peers.isEmpty()) {
-        card.addView(label("● Aguardando aparelho", 14f, strong = true).apply { setTextColor(dim) })
-        card.addView(label("Nenhuma consulta autenticada nos últimos 45 segundos.", 11f, muted = true))
+        card.addView(statePill("Aguardando consultas"))
+        card.addView(label("Nenhum acesso autenticado nos últimos 45 segundos.", 11f, muted = true))
     } else {
-        card.addView(label("● ${if (peers.size == 1) "Aparelho conectado recentemente" else "${peers.size} aparelhos com acesso recente"}", 14f, strong = true).apply {
-            setTextColor(highlight)
-        })
-        card.addView(label("Atividade detectada por consultas autenticadas, sem sessão permanente.", 10.5f, muted = true))
+        card.addView(statePill(
+            if (peers.size == 1) "1 aparelho recente" else "${peers.size} aparelhos recentes", "active"
+        ))
         peers.forEach { peer ->
             sectionGap(card, 6)
             val line = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
@@ -172,7 +181,7 @@ private fun MainActivity.renderIncomingAccess() {
                 maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END
             })
             line.addView(data, LinearLayout.LayoutParams(0, -2, 1f))
-            line.addView(actionButton("Ações") { showIncomingAccessActions(peer) }.apply {
+            line.addView(actionButton("Ver") { showIncomingAccessActions(peer) }.apply {
                 textSize = 11f; minWidth = 0
                 setPadding(dp(3), 0, dp(3), 0)
             }, LinearLayout.LayoutParams(dp(78), dp(40)))

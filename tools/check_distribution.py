@@ -16,7 +16,7 @@ assert match, "versionName ausente"
 version = match.group(1)
 code = re.search(r'\bversionCode\s*=\s*(\d+)', gradle)
 assert code, "versionCode ausente"
-assert version == "0.1.0-alpha.100" and code.group(1) == "100", "Versões incompatíveis"
+assert version == "0.1.0-alpha.102" and code.group(1) == "102", "Versões incompatíveis"
 appver = (root / 'app/src/main/java/br/dev/monitorremoto/transport/AppVersion.kt').read_text()
 assert f'const val NAME = "{version}"' in appver, "AppVersion fora de sincronia com o Gradle"
 assert 'AppVersion.NAME' in ui, "Tela de versão desatualizada"
@@ -137,7 +137,7 @@ print('PASSOU: alpha.17, Home independente, informações manuais protegidas e r
 assert 'internal var mode = 2 // 2: início, 0: monitorado, 1: controle' in ui
 assert 'else -> renderHome()' in ui and '0 -> renderMonitor()' in ui and '1 -> {' in ui
 assert 'iconTile(R.drawable.ic_qr, "Conectar novo aparelho"' in ui and 'Aparelhos anteriores' in ui
-assert 'Última conexão: $lastUsed' in ui and 'item.lastSuccessMs > 0L' in ui
+assert 'Último acesso bem-sucedido: $lastUsed' in ui and 'item.lastSuccessMs > 0L' in ui
 assert 'showHomeSavedDeviceOptions(item)' in ui and 'returnToChooser = false' in ui
 assert 'iconTile(R.drawable.ic_phone, "Monitorar este aparelho"' in ui and 'mode = 0' in ui
 assert 'val columns = LinearLayout(this)' in ui and 'iconMetric("IP da rede"' in ui
@@ -1426,3 +1426,38 @@ assert 'setTextColor(if (emphasis) foreground else muted)' not in skin100
 assert 'setTextColor(if (primary) Color.WHITE else foreground)' not in skin100
 assert 'ColorStateList.valueOf(foreground)' not in skin100
 print('PASSOU: alpha.100 não confunde View.foreground (Drawable) com cor Int no MonitorScreenSkin.')
+
+# Alpha.101: modernização conservadora de Home/Monitorado com estados verdadeiros.
+home101 = (ui_root / 'HomeScreenUi.kt').read_text(encoding='utf-8')
+monitor101 = (ui_root / 'MonitorScreenUi.kt').read_text(encoding='utf-8')
+components101 = (ui_root / 'UiComponents.kt').read_text(encoding='utf-8')
+assert 'internal fun MainActivity.statePill(' in components101
+assert 'internal fun MainActivity.monitorFeatureCard(' in components101
+assert 'Chaves salvas, não necessariamente online' in home101
+assert 'Último acesso bem-sucedido:' in home101
+assert 'monitorFeatureCard(' in monitor101 and monitor101.count('monitorFeatureCard(') == 3
+assert 'ScreenShareService.stop(this)' in monitor101
+assert 'manager.createScreenCaptureIntent()' in monitor101
+assert 'showAppConfirm("Compartilhar câmera ao vivo?"' in monitor101
+assert 'RemotePhotoSetupActivity::class.java' in monitor101
+assert 'Atividade recente, não conexão permanente' in monitor101
+assert 'badge = if (hasUsage && hasWifi)' in monitor101
+print('PASSOU: alpha.101 Home/Monitorado com estados claros, consentimento e parada preservados.')
+
+# Alpha.102: tela de ajustes compacta, sem cabeçalho repetido nem status falsos.
+settings102 = (ui_root / 'SettingsHubUi.kt').read_text(encoding='utf-8')
+screen102 = (ui_root / 'SettingsScreenUi.kt').read_text(encoding='utf-8')
+dialog102 = (ui_root / 'AppDialogUi.kt').read_text(encoding='utf-8')
+assert 'PERMISSÕES DO ANDROID' in settings102
+assert 'LocationShareStore.hasPermission(this)' in settings102
+assert 'Manifest.permission.CAMERA' in settings102
+assert 'hasListener()' in settings102
+assert 'visibility = View.GONE' in settings102 and 'search.text?.clear()' in settings102
+assert 'if (section == "home") {' in screen102 and 'renderSettingsHome()' in screen102
+assert 'showSettingsChoiceDialog(' in screen102 and 'Intervalo do GPS' in screen102
+assert 'internal fun MainActivity.showSettingsChoiceDialog(' in dialog102
+assert 'chooser.dismiss()' in dialog102 and 'onSelect(index)' in dialog102
+assert 'getButton(AlertDialog.BUTTON_POSITIVE)' in dialog102 and 'setLayout(' in dialog102
+assert (root/'app/src/main/res/drawable/ic_search.xml').is_file()
+assert 'LocationShareService.stop(this)' in screen102
+print('PASSOU: alpha.102 Configurações, permissões reais, GPS e diálogos compartilhados.')

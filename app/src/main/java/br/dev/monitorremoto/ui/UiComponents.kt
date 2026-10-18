@@ -105,6 +105,67 @@ internal fun MainActivity.infoChip(value: String, accent: Boolean = false): Text
     setPadding(dp(12), dp(8), dp(12), dp(8))
 }
 
+/** Indicador visual informativo: nunca implica sessão permanente ou permissão já concedida. */
+internal fun MainActivity.statePill(value: String, style: String = "neutral"): TextView {
+    val tone = when (style) {
+        "active" -> highlight
+        "warning" -> if (darkTheme()) Color.rgb(238, 183, 93) else Color.rgb(159, 100, 18)
+        "danger" -> if (darkTheme()) Color.rgb(242, 134, 133) else Color.rgb(181, 58, 60)
+        else -> dim
+    }
+    return TextView(this).apply {
+        text = value
+        textSize = 11f
+        setTypeface(null, Typeface.BOLD)
+        setTextColor(tone)
+        gravity = Gravity.CENTER
+        background = shape(
+            Color.argb(if (darkTheme()) 40 else 22, Color.red(tone), Color.green(tone), Color.blue(tone)),
+            999
+        )
+        setPadding(dp(11), dp(7), dp(11), dp(7))
+    }
+}
+
+/** Card reutilizável de captura: mostra estado, pré-condições e UMA ação explícita. */
+internal fun MainActivity.monitorFeatureCard(
+    iconRes: Int,
+    title: String,
+    description: String,
+    status: String,
+    statusStyle: String,
+    buttonTitle: String,
+    emphasized: Boolean = false,
+    onClick: () -> Unit
+): LinearLayout {
+    val box = panel(14)
+    val top = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+    val image = LinearLayout(this).apply {
+        gravity = Gravity.CENTER
+        background = shape(fieldColor, 14)
+        addView(vectorIcon(iconRes, 23, highlight))
+    }
+    top.addView(image, LinearLayout.LayoutParams(dp(44), dp(44)))
+    top.addView(View(this), LinearLayout.LayoutParams(dp(10), 1))
+    val words = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+    words.addView(label(title, 14.5f, strong = true).apply { setPadding(0, 0, 0, 0) })
+    words.addView(label(description, 11.5f, muted = true).apply {
+        setPadding(0, dp(3), 0, 0)
+        maxLines = 3
+    })
+    top.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
+    box.addView(top)
+    val foot = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+    foot.addView(statePill(status, statusStyle))
+    foot.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+    foot.addView(actionButton(buttonTitle, emphasis = emphasized, onClick = onClick).apply {
+        minWidth = 0
+        minimumHeight = dp(44)
+    }, LinearLayout.LayoutParams(-2, dp(44)))
+    box.addView(foot, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
+    return box
+}
+
 internal fun MainActivity.dialogWrapper(): Pair<ScrollView, LinearLayout> {
     val wrapper = ScrollView(this)
     val layout = LinearLayout(this).apply {

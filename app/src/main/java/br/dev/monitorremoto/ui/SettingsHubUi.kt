@@ -4,6 +4,9 @@ import android.content.Intent
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.Gravity
+import android.content.pm.PackageManager
+import android.Manifest
+import br.dev.monitorremoto.core.LocationShareStore
 import android.view.View
 import android.widget.TextView
 import android.view.inputmethod.EditorInfo
@@ -54,33 +57,85 @@ private val settingGroups = listOf(
 private fun folded(value: String): String = Normalizer.normalize(value, Normalizer.Form.NFD)
     .replace(Regex("\\p{M}+"), "").lowercase(Locale.ROOT).trim()
 
+/** Índice compacto e pesquisável, com estado verdadeiro das permissões locais. */
 internal fun MainActivity.renderSettingsHome() {
-    val header = panel(15)
-    header.addView(visualHeader(R.drawable.ic_settings, "Configurações", "Encontre rapidamente o que deseja ajustar"))
-    sectionGap(header, 9)
-    header.addView(visualTag("Permissões controladas neste celular", SettingsBadgeKind.NEUTRAL))
+    val header = panel(14)
+    header.addView(visualHeader(R.drawable.ic_settings, "Configurações", "Controle o que este aparelho compartilha"))
+    sectionGap(header, 12)
+    val overview = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        background = shape(fieldColor, 16)
+        setPadding(dp(11), dp(10), dp(11), dp(10))
+    }
+    overview.addView(label("PERMISSÕES DO ANDROID", 10.5f, strong = true, muted = true).apply {
+        setPadding(0, 0, 0, dp(7))
+    })
+    fun overviewRow(icon: Int, labelText: String, enabled: Boolean, section: String) {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = dp(45)
+            isClickable = true
+            isFocusable = true
+            contentDescription = "$labelText: ${if (enabled) "Autorizado" else "Não autorizado"}. Abrir configurações"
+            setOnClickListener { openSettingsSection(section) }
+        }
+        row.addView(vectorIcon(icon, 18, highlight), LinearLayout.LayoutParams(dp(21), dp(21)))
+        row.addView(label(labelText, 12.5f, strong = true).apply {
+            setPadding(dp(9), 0, 0, 0)
+        }, LinearLayout.LayoutParams(0, -2, 1f))
+        row.addView(statePill(if (enabled) "Autorizado" else "Pendente", if (enabled) "active" else "neutral"))
+        overview.addView(row)
+    }
+    overviewRow(R.drawable.ic_pin, "Localização", LocationShareStore.hasPermission(this), "location")
+    overviewRow(R.drawable.ic_remote_camera, "Câmera", checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED, "physical")
+    overviewRow(R.drawable.ic_bell, "Notificações", hasListener(), "notifications")
+    header.addView(overview)
     content.addView(header)
     sectionGap(content, 11)
 
+    val searchRow = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        background = shape(fieldColor, 15, true)
+        setPadding(dp(12), 0, dp(6), 0)
+    }
+    searchRow.addView(vectorIcon(R.drawable.ic_search, 20, dim))
     val search = EditText(this).apply {
-        hint = "Buscar: GPS, câmera, arquivos..."
+        hint = "Buscar configuração"
         textSize = 14f
         setTextColor(ink)
         setHintTextColor(dim)
-        background = shape(fieldColor, 14, true)
+        background = null
         inputType = android.text.InputType.TYPE_CLASS_TEXT
         imeOptions = EditorInfo.IME_ACTION_SEARCH
         isSingleLine = true
-        setPadding(dp(13), dp(8), dp(13), dp(8))
+        setPadding(dp(10), dp(5), dp(4), dp(5))
         contentDescription = "Pesquisar configurações"
     }
-    content.addView(search, LinearLayout.LayoutParams(-1, dp(48)))
-    sectionGap(content, 10)
+    searchRow.addView(search, LinearLayout.LayoutParams(0, dp(50), 1f))
+    val clear = TextView(this).apply {
+        text = "✕"
+        textSize = 16f
+        setTextColor(dim)
+        gravity = Gravity.CENTER
+        isClickable = true
+        isFocusable = true
+        contentDescription = "Limpar pesquisa"
+        visibility = View.GONE
+        setOnClickListener { search.text?.clear() }
+    }
+    searchRow.addView(clear, LinearLayout.LayoutParams(dp(42), dp(48)))
+    content.addView(searchRow)
+    val resultCount = label("", 11f, muted = true).apply { setPadding(dp(4), dp(8), 0, dp(4)) }
+    content.addView(resultCount)
     val results = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
     content.addView(results)
+
     fun update(query: String) {
         results.removeAllViews()
         val normalized = folded(query)
+        clear.visibility = if (query.isNotBlank()) View.VISIBLE else View.GONE
         var count = 0
         settingGroups.forEach { group ->
             val matches = group.entries.filter { entry ->
@@ -88,27 +143,26 @@ internal fun MainActivity.renderSettingsHome() {
             }
             if (matches.isEmpty()) return@forEach
             count += matches.size
-            val card = panel(11)
-            val sectionHeading = LinearLayout(this).apply {
+            val card = panel(12)
+            val head = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(3), dp(2), 0, dp(7))
             }
-            sectionHeading.addView(View(this).apply { background = shape(highlight, 99) },
-                LinearLayout.LayoutParams(dp(4), dp(19)))
-            sectionHeading.addView(label(group.title, 11f, strong = true, muted = true).apply {
-                setPadding(dp(10), 0, 0, 0)
+            head.addView(View(this).apply { background = shape(highlight, 99) },
+                LinearLayout.LayoutParams(dp(3), dp(17)))
+            head.addView(label(group.title, 10.5f, strong = true, muted = true).apply {
+                setPadding(dp(9), 0, 0, 0)
             })
-            card.addView(sectionHeading)
-            sectionGap(card, 9)
+            card.addView(head)
             matches.forEachIndexed { index, item ->
                 val row = LinearLayout(this).apply {
                     orientation = LinearLayout.HORIZONTAL
                     gravity = Gravity.CENTER_VERTICAL
-                    background = shape(fieldColor, 16)
-                    setPadding(dp(12), dp(9), dp(12), dp(9))
                     minimumHeight = dp(62)
                     isClickable = true
                     isFocusable = true
+                    setPadding(dp(5), dp(8), dp(4), dp(8))
                     contentDescription = "${item.title}. ${item.hint}"
                     setOnClickListener {
                         if (item.section == "adb") startActivity(Intent(this@renderSettingsHome, AdbActivity::class.java))
@@ -117,23 +171,34 @@ internal fun MainActivity.renderSettingsHome() {
                 }
                 val iconPlate = LinearLayout(this).apply {
                     gravity = Gravity.CENTER
-                    background = shape(surface, 12)
+                    background = shape(fieldColor, 13)
                     addView(vectorIcon(item.icon, 21, highlight))
                 }
                 row.addView(iconPlate, LinearLayout.LayoutParams(dp(40), dp(40)))
-                row.addView(View(this), LinearLayout.LayoutParams(dp(11), 1))
-                val text = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-                text.addView(label(item.title, 13.5f, strong = true).apply { setPadding(0, 0, 0, 0) })
-                text.addView(label(item.hint, 10.5f, muted = true).apply { setPadding(0, dp(2), 0, 0); maxLines = 2 })
-                row.addView(text, LinearLayout.LayoutParams(0, -2, 1f))
-                row.addView(label("›", 21f, muted = true))
+                val words = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(11), 0, 0, 0) }
+                words.addView(label(item.title, 13.5f, strong = true).apply {
+                    maxLines = 2
+                    setPadding(0, 0, 0, 0)
+                })
+                words.addView(label(item.hint, 11f, muted = true).apply {
+                    maxLines = 2
+                    setPadding(0, dp(2), 0, 0)
+                })
+                row.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
+                row.addView(label("›", 21f, muted = true).apply { gravity = Gravity.CENTER })
                 card.addView(row)
-                if (index < matches.lastIndex) sectionGap(card, 5)
+                if (index < matches.lastIndex) card.addView(View(this).apply {
+                    background = shape(lineColor, 1)
+                }, LinearLayout.LayoutParams(-1, dp(1)).apply { leftMargin = dp(54) })
             }
             results.addView(card)
-            sectionGap(results, 10)
+            sectionGap(results, 9)
         }
-        if (count == 0) results.addView(label("Nenhuma configuração encontrada. Tente outra palavra.", 13f, muted = true))
+        resultCount.text = if (normalized.isBlank()) "$count opções organizadas por categoria"
+            else "$count resultado(s) para “${query.trim()}”"
+        if (count == 0) results.addView(panel(14).apply {
+            addView(visualHeader(R.drawable.ic_search, "Nenhum resultado", "Tente buscar por GPS, câmera, notificações ou arquivos"))
+        })
     }
     search.addTextChangedListener(object : TextWatcher {
         override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit

@@ -1,3 +1,16 @@
+## 0.1.0-alpha.102 (versionCode 102) | 17/10/2026
+- Redesenhada a página Configurações sem cabeçalho duplicado: resumo real das permissões Android de localização, câmera e notificações, pesquisa com limpeza rápida e contador de resultados.
+- Modernizado o índice por categorias com seções compactas e separadores discretos, sem alterar roteamento ou autorizações locais.
+- Diálogo central de seleção do perfil GPS substitui a lista antiga; inclui descrição do consumo de bateria, seleção marcada e cancelamento explícito.
+- Diálogos gerenciados ajustam largura ao aparelho e botões ao tema. Preservados confirmações, criptografia, comandos e os modos do aplicativo.
+- Versionamento, documentação, Novidades e regressões sincronizados. Build Android completo e testes em aparelho pendentes.
+
+## 0.1.0-alpha.101 (versionCode 101) | 17/10/2026
+- Modernizada a tela inicial com painel de estado local, atalhos de pareamento e monitoramento e histórico de aparelhos identificando claramente credenciais salvas versus conexão online.
+- Redesenhado o Modo Monitorado: indicadores de serviço, permissões, captura de tela, câmera ao vivo, fotografia remota e acessos autenticados recentes.
+- Criados componentes reutilizáveis `statePill` e `monitorFeatureCard`, com semântica real de status e ações separadas; mantidos os pedidos Android de autorização, as confirmações e o botão Parar.
+- Versionamento, Novidades, documentação e regressões atualizados; compilação Gradle Android completa e verificação visual no aparelho pendentes.
+
 ## 0.1.0-alpha.100 (versionCode 100) | 17/10/2026
 - Corrige os três erros de Kotlin no workflow "Gerar APK e Release 87" (alpha.99), tarefa `:app:compileDebugKotlin`, em `MonitorScreenSkin.kt:43`, `:53` e `:73`.
 - Dentro dos escopos `TextView.apply`, `Button.apply` e `ImageView.apply`, `foreground` era a propriedade `View.foreground` do tipo `Drawable`; as chamadas de cor requerem `Int`. Referência explícita `this@MonitorScreenSkin.foreground` resolve a colisão.

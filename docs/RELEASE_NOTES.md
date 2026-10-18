@@ -1,3 +1,20 @@
+# Monitor Remoto v0.1.0-alpha.102 · Configurações e diálogos
+
+- Índice de configurações compacto, sem título duplicado, com ícones, contagem de resultados e busca que pode ser limpa com um toque.
+- Estado de permissões Android de câmera, localização e notificações acessível no topo; não presume serviços ativos ou conteúdo compartilhado.
+- Escolha de perfil GPS modernizada e claramente associada a bateria/autonomia; não aplica nova seleção até o toque.
+- Janelas de confirmação e seleção responsivas, preservando controles de privacidade e autenticação.
+- Instale a mesma versão nos dois aparelhos após conferir o build Android no GitHub Actions. Compilação completa e aparência em aparelho físico ainda pendentes.
+
+# Monitor Remoto v0.1.0-alpha.101 · Tela inicial e Modo Monitorado
+
+- Novo painel inicial com estado de monitoramento local e atalhos legíveis.
+- Aparelhos salvos exibem data de acesso anterior sem sugerir conexão atual.
+- No monitorado, tela, câmera e foto têm cartões com ícone, estado e ação separada; permissões aparecem em resumo claro.
+- Indicador de acesso recente distingue autenticação ocorrida de conexão permanente.
+- Mantidos MediaProjection, autorização local, parada visível, ADB/TLS, AES-GCM, permissões e confirmações existentes.
+- Verificações estáticas locais; build Android completo e inspeção física pendentes.
+
 # Monitor Remoto v0.1.0-alpha.100 · Correção do build 87
 
 - `MonitorScreenSkin.kt` corrigido em três usos de `foreground`: `TextView`, `Button` e `ImageView` agora usam explicitamente a cor `Int` do kit visual, em vez do `Drawable` herdado de `View`.

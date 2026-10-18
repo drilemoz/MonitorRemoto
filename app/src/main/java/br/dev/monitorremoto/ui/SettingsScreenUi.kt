@@ -47,19 +47,18 @@ internal fun MainActivity.renderSettingsModule() {
     )
     val section = settingsSection
     val title = labelBySection[section]
-    val top = panel(16)
-    top.addView(iconSectionHeader(R.drawable.ic_settings, title ?: "Configurações",
-        if (title == null) "Escolha o que deseja ajustar neste aparelho" else "As alterações são feitas neste aparelho"))
-    if (title != null) {
-        sectionGap(top, 12)
-        top.addView(actionButton("‹ Voltar às categorias") { openSettingsSection("home") })
-    }
-    content.addView(top)
-    sectionGap(content, 13)
     if (section == "home") {
+        // A página inicial possui seu próprio cabeçalho. Não repetir "Configurações".
         renderSettingsHome()
     } else {
-        val page = panel(15)
+        val top = panel(13)
+        top.addView(visualHeader(R.drawable.ic_settings, title ?: "Configurações",
+            "Preferências e permissões deste aparelho"))
+        sectionGap(top, 10)
+        top.addView(actionButton("‹ Categorias") { openSettingsSection("home") })
+        content.addView(top)
+        sectionGap(content, 10)
+        val page = panel(12)
         when (section) {
             "notifications" -> fillNotificationSettings(page)
             "apps" -> fillAppsSettings(page)
@@ -850,13 +849,20 @@ internal fun MainActivity.fillLocationSettings(layout: LinearLayout) {
         if (active) {
             showAppNotice("Sessão em andamento", "Pare a sessão antes de alterar o intervalo GPS.")
         } else {
-            showManagedDialog(themedPopup(this)
-                .setTitle("Intervalo de localização")
-                .setSingleChoiceItems(arrayOf("Econômico · 5 minutos", "Equilibrado · 60 segundos", "Intermediário · 30 segundos", "Preciso · 10 segundos"),
-                    listOf("economico", "equilibrado", "intermediario", "preciso").indexOf(profile)) { dialog, which ->
-                    SettingsStore.setLocationProfile(this, listOf("economico", "equilibrado", "intermediario", "preciso")[which])
-                    dialog.dismiss(); openSettingsSection("location")
-                })
+            showSettingsChoiceDialog(
+                "Intervalo do GPS",
+                "Escolha a frequência do monitorado. O perfil mais preciso consome mais bateria.",
+                listOf(
+                    "Econômico · 5 minutos" to "Menor gasto de energia",
+                    "Equilibrado · 60 segundos" to "Bom equilíbrio para acompanhamento",
+                    "Intermediário · 30 segundos" to "Atualizações mais frequentes",
+                    "Preciso · 10 segundos" to "Maior consumo de bateria"
+                ),
+                listOf("economico", "equilibrado", "intermediario", "preciso").indexOf(profile)
+            ) { which ->
+                SettingsStore.setLocationProfile(this, listOf("economico", "equilibrado", "intermediario", "preciso")[which])
+                openSettingsSection("location")
+            }
         }
     })
     sectionGap(layout, 10)

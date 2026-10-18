@@ -1,4 +1,4 @@
-# Monitor Remoto v0.1.0-alpha.99
+# Monitor Remoto v0.1.0-alpha.102
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,23 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.100 / versionCode 100** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.102 / versionCode 102** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Configurações e diálogos padronizados (alpha.102)
+
+- A aba Configurações agora usa um único cabeçalho, índice com grupos de opções em linhas mais leves, campo de busca com limpeza acessível e contagem real de resultados.
+- Visão geral mostra as autorizações **locais** de câmera, GPS e notificações conforme o Android; tocar abre a respectiva categoria, sem solicitar permissão automaticamente.
+- Seleção de perfil GPS usa diálogo central visual com descrições de autonomia, indicador de escolha atual e cancelamento seguro.
+- Diálogos gerenciados usam largura responsiva e botões menos agressivos; ações continuam exigindo confirmação explícita.
+- Nenhuma permissão, chave, protocolo de conexão ou captura foi ampliada. Compilação Gradle/Android e validação visual real pendentes.
+
+## Modernização da tela inicial e Modo Monitorado (alpha.101)
+
+- Tela inicial: painel de identidade e status local, atalhos claros para pareamento e monitoramento, histórico de aparelhos com indicação explícita de chave salva, sem confundir com conexão online.
+- Modo Monitorado: status do serviço destacado, cartão compacto de permissões, bloco padronizado de captura com ícones, descrição curta e estado da tela/câmera/foto, deixando a confirmação explícita no fluxo já existente.
+- Acessos autenticados: indicador de atividade recente, sem prometer sessão de rede permanente. Componente compartilhado `statePill` e `monitorFeatureCard` para uniformidade visual.
+- As permissões, captura consentida, pareamento, protocolo AES-GCM, comandos ADB e controles de parada permaneceram sem mudanças. Não há nova permissão.
+- Compilação Android completa e teste de toque/tema em aparelhos físicos continuam pendentes.
 
 ## Correção do workflow 87 (alpha.100)
 

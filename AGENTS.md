@@ -1,3 +1,17 @@
+# Monitor Remoto 0.1.0-alpha.102
+
+- Alpha.102 moderniza `SettingsHubUi.kt`, `SettingsScreenUi.kt`, `AppDialogUi.kt` e acrescenta `ic_search.xml`. Indicadores na página de Configurações mostram **somente permissões Android locais** e não significam serviços ativos ou compartilhamento remoto.
+- O seletor de perfil GPS deve exigir toque explícito para gravar a preferência. Preservar o bloqueio de alteração durante sessões ativas, autorização por Android e interrupção de compartilhamento.
+- Manter confirmação explícita em ações destrutivas/privadas, mesma versão nos dois aparelhos e nenhuma ampliação de permissões ou comandos.
+- Próxima versão sequencial: 0.1.0-alpha.103/versionCode 103. Executar `tools/check_distribution.py`, validar Kotlin/XML e confirmar compilação Android na CI.
+
+# Monitor Remoto 0.1.0-alpha.101
+
+- Alpha.101 moderniza `HomeScreenUi.kt`, `MonitorScreenUi.kt` e adiciona os componentes `statePill` e `monitorFeatureCard` em `UiComponents.kt`. Preservar indicadores como estado *local* ou acesso *recente*, nunca representá-los como sessão permanente.
+- Preservar os pedidos de consentimento MediaProjection, Activity da câmera, preparação local de fotografia e controles de parada; os novos cartões nunca podem executar a captura somente por exibir a tela.
+- Não modificar pareamento ou protocolo remoto nesta fase. Validar `tools/check_distribution.py`, sintaxe Kotlin e build Android em CI antes de afirmar que o APK compila.
+- Próxima versão: 0.1.0-alpha.102 / versionCode 102. Ambos os aparelhos precisam de exatamente a mesma versão.
+
 # Monitor Remoto 0.1.0-alpha.100
 
 - Correção do workflow "Gerar APK e Release 87" (alpha.99): `:app:compileDebugKotlin` falhou por colisão de nome em `MonitorScreenSkin.kt` entre a cor `foreground: Int` e `View.foreground: Drawable` nos blocos `.apply`. Qualificar as três referências como `this@MonitorScreenSkin.foreground`.

@@ -1,3 +1,16 @@
+## Alpha.102 (17/10/2026)
+
+- [x] Novo índice de Configurações sem títulos repetidos, opções compactas e estados Android reais.
+- [x] Escolha de perfil GPS com diálogo visual e confirmação mediante toque, sem alterar consentimentos.
+- [x] Verificador estrutural de regressão e versionamento sincronizado.
+- [ ] Compilação Gradle/Android completa e inspeção visual com aparelhos reais pendentes.
+
+## Alpha.101 · 17/10/2026
+
+- [x] Revisão de código de Home/Monitorado; cartões de status não indicam conexão permanente.
+- [x] Controles de permissão, MediaProjection, Camera2, Foto preparada e parada visível preservados.
+- [ ] Build Gradle completo em CI e teste de aparência em Android real pendentes.
+
 ## Alpha.100 (17/10/2026)
 
 - Logs do workflow "Gerar APK e Release 87" conferidos: falha real em `:app:compileDebugKotlin`, `MonitorScreenSkin.kt` linhas 43/53/73. Etapas de recursos Android foram concluídas.
