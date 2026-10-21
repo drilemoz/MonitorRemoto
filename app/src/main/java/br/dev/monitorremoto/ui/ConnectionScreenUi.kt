@@ -13,108 +13,93 @@ import br.dev.monitorremoto.core.SettingsStore
 import br.dev.monitorremoto.transport.PairingCode
 import java.net.Inet4Address
 
+/** Cabeçalho do controlador em linhas independentes; evita compressão em 320-360 dp. */
 internal fun MainActivity.renderController() {
     val host = SettingsStore.getRemoteHost(this)
-    val card = panel(15).apply { background = shape(surface, 22, true) }
     val saved = RecentDevices.list(this).firstOrNull { it.host == host }
     val remoteName = remoteConnection.cached?.optJSONObject("battery")?.optString("device")
         ?.takeIf { remoteConnection.cachedHost == host && it.isNotBlank() }
     val titleText = if (saved?.customName == true) saved.name
         else remoteName ?: saved?.name ?: "Nenhum aparelho selecionado"
-
+    val card = panel(14).apply { background = shape(fieldColor, 22) }
     val heading = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-    val headingNames = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-    currentDeviceTitle = label(titleText, 16.5f, strong = true).apply {
-        maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
+    val phone = LinearLayout(this).apply {
+        gravity = Gravity.CENTER
+        background = shape(surface, 15)
+        addView(vectorIcon(br.dev.monitorremoto.R.drawable.ic_phone, 25, ink))
+    }
+    heading.addView(phone, LinearLayout.LayoutParams(dp(48), dp(48)))
+    val names = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(11), 0, 0, 0) }
+    currentDeviceTitle = label(titleText, 16f, strong = true).apply {
+        maxLines = 2
+        ellipsize = android.text.TextUtils.TruncateAt.END
         setPadding(0, 0, 0, 0)
     }
-    val renameRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-    renameRow.addView(currentDeviceTitle, LinearLayout.LayoutParams(0, -2, 1f))
-    val editName = android.widget.ImageView(this).apply {
-        setImageResource(br.dev.monitorremoto.R.drawable.ic_edit)
-        imageTintList = android.content.res.ColorStateList.valueOf(dim)
-        setPadding(dp(7), dp(7), dp(7), dp(7))
-        background = shape(fieldColor, 11, true)
-        contentDescription = "Renomear aparelho salvo"
-        isFocusable = true; isClickable = true
-        setOnClickListener {
-            RecentDevices.list(this@renderController).firstOrNull { it.host == host }
-                ?.let { renameSavedDevice(it, returnToChooser = false) }
-                ?: showAppNotice("Renomear", "Pareie ou salve este aparelho primeiro.")
-        }
+    names.addView(currentDeviceTitle)
+    names.addView(label(if (host.isBlank()) "Escolha um aparelho" else connectionKind(host), 11.5f, muted = true).apply {
+        setPadding(0, dp(3), 0, 0)
+    })
+    heading.addView(names, LinearLayout.LayoutParams(0, -2, 1f))
+    heading.addView(headerIconButton(br.dev.monitorremoto.R.drawable.ic_edit, "Renomear aparelho") {
+        RecentDevices.list(this).firstOrNull { it.host == host }
+            ?.let { renameSavedDevice(it, returnToChooser = false) }
+            ?: showAppNotice("Renomear", "Pareie ou salve este aparelho primeiro.")
+    }, LinearLayout.LayoutParams(dp(48), dp(48)))
+    heading.addView(headerIconButton(br.dev.monitorremoto.R.drawable.ic_phone, "Escolher outro aparelho") {
+        showConnectionChooser()
+    }, LinearLayout.LayoutParams(dp(48), dp(48)))
+    card.addView(heading)
+    sectionGap(card, 10)
+
+    val statusRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+    currentStatus = label("", 12f, strong = true).apply {
+        background = shape(surface, 13)
+        setPadding(dp(9), dp(7), dp(9), dp(7))
+        maxLines = 1
     }
-    renameRow.addView(editName, LinearLayout.LayoutParams(dp(44), dp(44)))
-    headingNames.addView(renameRow)
-    if (remoteName != null && saved?.customName == true) {
-        headingNames.addView(label(remoteName, 10f, muted = true).apply {
-            maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
-            setPadding(0, 0, 0, 0)
-        })
-    }
-    heading.addView(headingNames, LinearLayout.LayoutParams(0, -2, 1f))
-    heading.addView(View(this), LinearLayout.LayoutParams(dp(7), 1))
-    val refresh = android.widget.ImageView(this).apply {
-        setImageResource(br.dev.monitorremoto.R.drawable.ic_refresh)
-        imageTintList = android.content.res.ColorStateList.valueOf(ink)
-        setPadding(dp(9), dp(9), dp(9), dp(9))
-        background = shape(fieldColor, 13, true)
-        isClickable = true; isFocusable = true
-        contentDescription = "Atualizar dados do aparelho"
-        setOnClickListener { refreshRemote(silent = false) }
-    }
-    heading.addView(refresh, LinearLayout.LayoutParams(dp(44), dp(44)))
-    heading.addView(View(this), LinearLayout.LayoutParams(dp(6), 1))
-    val details = android.widget.ImageView(this).apply {
-        setImageResource(br.dev.monitorremoto.R.drawable.ic_info)
-        imageTintList = android.content.res.ColorStateList.valueOf(ink)
-        setPadding(dp(9), dp(9), dp(9), dp(9))
-        background = shape(fieldColor, 13, true)
-        contentDescription = "Detalhes completos deste aparelho"
-        isClickable = true; isFocusable = true
-        setOnClickListener {
-            val current = remoteConnection.cached?.takeIf { remoteConnection.cachedHost == host }
-            if (current != null) showRemoteDetailsDialog(current)
-            else showAppNotice("Detalhes", "Atualize o aparelho para obter as informações remotas.")
-        }
-    }
-    heading.addView(details, LinearLayout.LayoutParams(dp(44), dp(44)))
-    heading.addView(View(this), LinearLayout.LayoutParams(dp(6), 1))
-    currentConnectButton = actionButton("Desconectar") {
+    statusRow.addView(currentStatus, LinearLayout.LayoutParams(0, -2, 1f))
+    currentConnectButton = actionButton("Conectar") {
         when (effectiveConnectionState()) {
             "connected", "loading" -> disconnectCurrent()
             else -> showConnectionChooser()
         }
-    }.apply { textSize = 10.5f; minWidth = 0; setPadding(dp(2), 0, dp(2), 0) }
-    heading.addView(currentConnectButton, LinearLayout.LayoutParams(dp(92), dp(44)))
-    card.addView(heading)
-    sectionGap(card, 6)
-    val statusRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-    currentStatus = label("", 11f, strong = true).apply {
-        setPadding(dp(10), dp(6), dp(10), dp(6))
-        background = shape(fieldColor, 99, true)
-        maxLines = 1
-    }
-    statusRow.addView(currentStatus)
-    statusRow.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
-    currentUpdated = label("", 10.5f, muted = true).apply {
-        setPadding(0, 0, 0, 0); maxLines = 1
-        ellipsize = android.text.TextUtils.TruncateAt.END
-        gravity = Gravity.END
-    }
-    statusRow.addView(currentUpdated, LinearLayout.LayoutParams(0, -2, 1.45f))
+    }.apply { textSize = 12.5f; background = shape(surface, 14, true) }
+    statusRow.addView(currentConnectButton, LinearLayout.LayoutParams(dp(116), dp(48)))
     card.addView(statusRow)
-    sectionGap(card, 10)
-
-    resultBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-    card.addView(resultBox)
+    currentUpdated = label("", 11f, muted = true).apply {
+        setPadding(0, dp(8), 0, 0)
+        maxLines = 3
+    }
+    card.addView(currentUpdated)
+    sectionGap(card, 12)
+    val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+    actions.addView(actionButton("⟳  Atualizar") { refreshRemote(silent = false) }.apply {
+        textSize = 13.5f
+        background = shape(surface, 15)
+    }, LinearLayout.LayoutParams(0, dp(48), 1f))
+    actions.addView(View(this), LinearLayout.LayoutParams(dp(8), 1))
+    actions.addView(actionButton("ⓘ  Detalhes") {
+        val current = remoteConnection.cached?.takeIf { remoteConnection.cachedHost == host }
+        if (current != null) showRemoteDetailsDialog(current)
+        else showAppNotice("Detalhes", "Atualize o aparelho para obter as informações remotas.")
+    }.apply {
+        textSize = 13.5f
+        background = shape(surface, 15)
+    }, LinearLayout.LayoutParams(0, dp(48), 1f))
+    card.addView(actions)
     content.addView(card)
+    gap(15)
+    resultBox = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+    content.addView(resultBox)
     updateConnectionLabels()
     val cached = remoteConnection.cached
     if (cached != null && remoteConnection.cachedHost == host) displayResult(cached, fromCache = true)
-    else if (remoteConnection.state == "offline") resultBox?.addView(connectionIssueCard(host))
-    else resultBox?.addView(label("Toque em Conectar para escolher QR Code, conexão manual ou aparelho salvo.", 13f, muted = true))
-    gap(8)
-    addText("Atualização automática enquanto esta tela está aberta · intervalo de 15 s.", 10.5f, muted = true)
+    else {
+        displayEmptyRemoteDashboard()
+        if (remoteConnection.state == "offline") {
+            resultBox?.addView(connectionIssueCard(host), 0)
+        }
+    }
 }
 
 internal fun MainActivity.effectiveConnectionState(): String {

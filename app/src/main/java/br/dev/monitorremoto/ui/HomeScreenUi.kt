@@ -15,116 +15,114 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** Alpha.27: Home segue os cartões vetoriais e os agrupamentos do painel remoto. */
+/** Lista de aparelhos mobile-first: dados salvos não significam conexão ativa. */
 internal fun MainActivity.renderHome() {
     val recentAccess = AuthenticatedAccess.recent()
     if (recentAccess.isNotEmpty() && SettingsStore.isMonitorEnabled(this) && MonitorService.isRunning) {
-        val accessCard = panel(15)
-        accessCard.addView(iconSectionHeader(R.drawable.ic_shield, "Acesso remoto recente", "${recentAccess.size} aparelho(s) consultaram este celular"))
-        sectionGap(accessCard, 12)
-        accessCard.addView(iconMenuRow(R.drawable.ic_phone, "Ver acessos", "Identificar consultas autorizadas") {
-            mode = 0
-            render()
-        })
-        content.addView(accessCard)
+        val access = mobileSurfaceCard()
+        access.addView(iconMenuRow(R.drawable.ic_shield, "Acessos recentes",
+            "${recentAccess.size} aparelho(s) consultaram este telefone") { navigateMainTab(0) })
+        content.addView(access)
         gap(12)
     }
 
-    val homeHero = panel(16)
-    homeHero.addView(iconSectionHeader(R.drawable.ic_shield, "Seus aparelhos", "Controle e compartilhamento protegidos"))
-    sectionGap(homeHero, 12)
-    val stateRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-    val localActive = SettingsStore.isMonitorEnabled(this) && MonitorService.isRunning
-    stateRow.addView(statePill(if (localActive) "Monitorado ativo" else "Monitorado inativo", if (localActive) "active" else "neutral"))
-    stateRow.addView(View(this), LinearLayout.LayoutParams(dp(8), 1))
-    stateRow.addView(statePill("Rede local / VPN"))
-    homeHero.addView(stateRow)
-    content.addView(homeHero)
-    gap(15)
-    content.addView(iconSectionHeader(R.drawable.ic_qr, "Acesso rápido", "Escolha o que deseja fazer"))
-    gap(9)
-    val shortcuts = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-    twoColumnTiles(shortcuts, listOf(
-        iconTile(R.drawable.ic_qr, "Conectar novo aparelho", "QR Code ou IP", featured = true) {
-            showConnectionChooser()
-        },
-        iconTile(R.drawable.ic_phone, "Monitorar este aparelho", "Compartilhar dados") {
-            mode = 0
-            render()
-        }
-    ))
-    content.addView(shortcuts)
-    gap(15)
-
-    val recent = RecentDevices.list(this)
-    val listPanel = panel(16).apply { background = shape(surface, 24, true) }
-    listPanel.addView(iconSectionHeader(R.drawable.ic_phone, "Aparelhos anteriores", "Chaves salvas, não necessariamente online"))
-    sectionGap(listPanel, 14)
-    if (recent.isEmpty()) {
-        val empty = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
+    val saved = RecentDevices.list(this)
+    val devices = mobileSurfaceCard()
+    devices.addView(mobileHeading(R.drawable.ic_phone, "Meus aparelhos"))
+    sectionGap(devices, 12)
+    if (saved.isEmpty()) {
+        val empty = mobileWhiteCard().apply {
             gravity = Gravity.CENTER
-            background = shape(fieldColor, 20)
-            setPadding(dp(18), dp(24), dp(18), dp(24))
+            setPadding(dp(16), dp(21), dp(16), dp(21))
         }
-        empty.addView(vectorIcon(R.drawable.ic_qr, 32, dim))
-        empty.addView(label("Nenhum aparelho salvo", 14f, strong = true).apply { gravity = Gravity.CENTER })
-        empty.addView(label("Use Conectar novo aparelho para iniciar um pareamento.", 11.5f, muted = true).apply {
+        empty.addView(vectorIcon(R.drawable.ic_phone, 28, dim))
+        empty.addView(label("Nenhum aparelho salvo", 15f, strong = true).apply { gravity = Gravity.CENTER })
+        empty.addView(label("Conecte por QR Code ou informe o IP e a chave de pareamento.", 12f, muted = true).apply {
             gravity = Gravity.CENTER
+            textAlignment = View.TEXT_ALIGNMENT_CENTER
         })
-        listPanel.addView(empty)
+        devices.addView(empty)
     } else {
-        recent.forEachIndexed { index, item ->
-            if (index != 0) sectionGap(listPanel, 10)
-            val device = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                background = shape(fieldColor, 20, true)
-                setPadding(dp(13), dp(13), dp(13), dp(13))
-            }
+        saved.forEachIndexed { index, item ->
+            if (index > 0) sectionGap(devices, 9)
+            val device = mobileWhiteCard()
             val heading = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-            val iconHolder = LinearLayout(this).apply {
-                gravity = Gravity.CENTER
-                background = shape(surface, 14, true)
-                addView(vectorIcon(R.drawable.ic_phone, 24, highlight))
-            }
-            heading.addView(iconHolder, LinearLayout.LayoutParams(dp(46), dp(46)))
-            heading.addView(View(this), LinearLayout.LayoutParams(dp(10), 1))
-            val labels = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-            labels.addView(label(item.name, 14.5f, strong = true).apply {
+            val words = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+            words.addView(label(item.name, 16f, strong = true).apply {
                 maxLines = 2
-                ellipsize = android.text.TextUtils.TruncateAt.END
                 setPadding(0, 0, 0, 0)
             })
-            labels.addView(label(item.host, 11.5f, muted = true).apply { setPadding(0, dp(4), 0, 0) })
-            heading.addView(labels, LinearLayout.LayoutParams(0, -2, 1f))
-            device.addView(heading)
-            sectionGap(device, 7)
-            device.addView(statePill("Pareamento salvo"))
             val lastUsed = if (item.lastSuccessMs > 0L)
-                SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(item.lastSuccessMs))
-                else "ainda sem conexão confirmada"
-            device.addView(label("Último acesso bem-sucedido: $lastUsed", 11f, muted = true).apply { setPadding(0, dp(7), 0, dp(8)) })
-            val buttons = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-            buttons.addView(actionButton("Conectar", emphasis = true) { connectSavedDevice(item) },
-                LinearLayout.LayoutParams(0, dp(44), 1f))
-            buttons.addView(View(this), LinearLayout.LayoutParams(dp(9), 1))
-            val settings = ImageView(this).apply {
+                "Última resposta: " + SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).format(Date(item.lastSuccessMs))
+                else "Aguardando primeira resposta"
+            words.addView(label(lastUsed, 11.5f, muted = true).apply { setPadding(0, dp(5), 0, 0) })
+            heading.addView(words, LinearLayout.LayoutParams(0, -2, 1f))
+            val menu = ImageView(this).apply {
                 setImageResource(R.drawable.ic_settings)
-                imageTintList = ColorStateList.valueOf(ink)
-                setPadding(dp(12), dp(12), dp(12), dp(12))
-                background = shape(surface, 14, true)
-                contentDescription = "Gerenciar ${item.name}: renomear ou esquecer"
-                isClickable = true
-                isFocusable = true
+                imageTintList = ColorStateList.valueOf(dim)
+                setPadding(dp(11), dp(11), dp(11), dp(11))
+                background = shape(fieldColor, 13, true)
+                contentDescription = "Gerenciar ${item.name}"
+                isClickable = true; isFocusable = true
                 setOnClickListener { showHomeSavedDeviceOptions(item) }
             }
-            buttons.addView(settings, LinearLayout.LayoutParams(dp(44), dp(44)))
-            device.addView(buttons)
-            listPanel.addView(device)
+            heading.addView(menu, LinearLayout.LayoutParams(dp(48), dp(48)))
+            device.addView(heading)
+            sectionGap(device, 10)
+            device.addView(actionButton("Abrir controles", onClick = { connectSavedDevice(item) }).apply {
+                textSize = 14f
+                minimumHeight = dp(50)
+                background = shape(fieldColor, 15, true)
+            }, LinearLayout.LayoutParams(-1, dp(50)))
+            devices.addView(device)
         }
     }
-    content.addView(listPanel)
+    sectionGap(devices, 11)
+    val addNew = actionButton("＋  Conectar novo aparelho") { showConnectionChooser() }.apply {
+        textSize = 14f
+        minHeight = dp(60)
+        background = shape(surface, 18, true)
+    }
+    devices.addView(addNew, LinearLayout.LayoutParams(-1, dp(60)))
+    content.addView(devices)
+    gap(21)
+
+    content.addView(label("Este telefone", 18f, strong = true).apply { setPadding(0, 0, 0, dp(12)) })
+    val enabled = SettingsStore.isMonitorEnabled(this) && MonitorService.isRunning
+    val own = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        background = shape(fieldColor, 20, true)
+        setPadding(dp(15), dp(16), dp(14), dp(16))
+        isClickable = true; isFocusable = true
+        contentDescription = "Monitoramento: ${if (enabled) "ativo" else "inativo"}. Gerenciar compartilhamento"
+        setOnClickListener { navigateMainTab(0) }
+    }
+    own.addView(vectorIcon(R.drawable.ic_shield, 26, if (enabled) highlight else dim),
+        LinearLayout.LayoutParams(dp(32), dp(32)))
+    val ownText = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), 0, 0, 0) }
+    ownText.addView(label("Monitoramento", 16.5f, strong = true).apply { setPadding(0, 0, 0, 0) })
+    ownText.addView(label("Gerenciar compartilhamento", 12f, muted = true).apply { setPadding(0, dp(3), 0, 0) })
+    own.addView(ownText, LinearLayout.LayoutParams(0, -2, 1f))
+    own.addView(label("›", 27f, muted = true))
+    content.addView(own)
 }
+
+private fun MainActivity.mobileSurfaceCard(): LinearLayout = panel(13).apply {
+    background = shape(fieldColor, 23)
+}
+
+private fun MainActivity.mobileWhiteCard(): LinearLayout = panel(15).apply {
+    background = shape(surface, 19)
+}
+
+private fun MainActivity.mobileHeading(icon: Int, title: String): LinearLayout =
+    LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        addView(vectorIcon(icon, 23, ink), LinearLayout.LayoutParams(dp(25), dp(25)))
+        addView(label(title, 18f, strong = true).apply { setPadding(dp(10), 0, 0, 0) })
+    }
 
 /** Opções de um aparelho ficam em cartões com ícones, sem lista nativa simples. */
 private fun MainActivity.showHomeSavedDeviceOptions(item: RecentDevices.Device) {

@@ -1,4 +1,4 @@
-# Monitor Remoto v0.1.0-alpha.104
+# Monitor Remoto v0.1.0-alpha.105
 
 **Alpha.91:** toque em Bateria ou Temperatura no painel remoto para abrir diálogo central de termometria. Android: bateria, estado térmico, headroom (indicador sem °C) e sensor ambiente somente quando presente. ADB: leitura adicional de zonas térmicas do mesmo IP previamente pareado via comando fixo `dumpsys thermalservice`, sem exigir ADB na consulta comum. Algumas zonas não são expostas pelo fabricante; valor ausente nunca é estimado. Build Android ainda pendente.
 
@@ -8,7 +8,16 @@
 
 **Foto remota (histórico alpha.84):** no monitorado, ative monitoramento e abra **Preparar foto remota** uma vez para armar a câmera com permissão Android e notificação permanente. No controlador, toque em **Tirar foto**. Apenas um JPEG é capturado por Camera2 (sem prévia/streaming), recebido por AES-GCM e mostrado para salvar. Não funciona se o Android parar a sessão, houver indisponibilidade da câmera ou se o aparelho estiver fora da LAN/VPN. Não rearma por boot nem permite abertura oculta.
 
-**v0.1.0-alpha.104 / versionCode 104** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+**v0.1.0-alpha.105 / versionCode 105** · Android 8.0+ · Kotlin 2.2.21 · AGP 8.13.2 · Gradle 8.13
+
+## Interface mobile-first (alpha.105)
+
+- Nova navegação inferior fixa com Início, Controlar, Monitorado e Ajustes. O conteúdo principal é rolável, inclusive em smartphones compactos.
+- Início com aparelhos pareados, último acesso real, botão de conexão e acesso ao monitoramento local.
+- Controlar com cabeçalho próprio, botões separados e informações de bateria, temperatura e rede em cartões legíveis; dados antigos são identificados.
+- Acesso rápido com Tela, Arquivos, Câmeras e Localização em duas colunas; as outras oito funções permanecem no grupo expansível.
+- Sem modificações de criptografia, protocolos, permissões de captura, pareamento e comandos remotos. Mantenha a mesma versão instalada nos dois telefones.
+- **Pendente:** compilação Android na CI e teste de navegação/layout no dispositivo real.
 
 ## Estabilidade de conexões e proteção de sessão (alpha.104)
 

@@ -17,12 +17,13 @@ import br.dev.monitorremoto.transport.AuthenticatedAccess
 
 /** Tela monitorada: ações agrupadas à direita do cartão, sem botões longos. */
 internal fun MainActivity.renderMonitor() {
-    content.addView(iconSectionHeader(br.dev.monitorremoto.R.drawable.ic_shield,
-        "Modo monitorado", "Permissões locais e compartilhamento autorizado"))
+    content.addView(label("Compartilhamento local", 17f, strong = true).apply {
+        setPadding(0, 0, 0, 0)
+    })
     gap(12)
     val enabled = SettingsStore.isMonitorEnabled(this)
     val running = MonitorService.isRunning
-    val card = panel(17).apply { background = shape(surface, 24, true) }
+    val card = panel(16).apply { background = shape(fieldColor, 22) }
     val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
     val iconHolder = LinearLayout(this).apply {
         gravity = Gravity.CENTER
@@ -61,11 +62,20 @@ internal fun MainActivity.renderMonitor() {
     card.addView(columns)
     sectionGap(card, 16)
 
-    val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+    val actions = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+    var actionCount = 0
+    var actionRow: LinearLayout? = null
     fun addCompact(title: String, icon: Int, emphasize: Boolean = false, onClick: () -> Unit) {
-        if (actions.childCount > 0) actions.addView(View(this), LinearLayout.LayoutParams(dp(8), 1))
-        val tile = iconTile(icon, title, featured = emphasize, onClick = onClick).apply { minimumHeight = dp(102) }
-        actions.addView(tile, LinearLayout.LayoutParams(0, -2, 1f))
+        if (actionCount % 2 == 0) {
+            if (actionCount > 0) sectionGap(actions, 8)
+            actionRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            actions.addView(actionRow)
+        } else actionRow?.addView(View(this), LinearLayout.LayoutParams(dp(8), 1))
+        val tile = iconTile(icon, title, featured = emphasize, onClick = onClick).apply {
+            minimumHeight = dp(90)
+        }
+        actionRow?.addView(tile, LinearLayout.LayoutParams(0, -2, 1f))
+        actionCount++
     }
     if (enabled && running) {
         addCompact("Gerar QR", br.dev.monitorremoto.R.drawable.ic_qr, true) { chooseQrAddress() }

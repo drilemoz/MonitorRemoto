@@ -32,8 +32,8 @@ internal fun MainActivity.refreshRemote(silent: Boolean) {
                     displayResult(old, fromCache = true)
                     resultBox?.addView(connectionIssueCard(host), 0)
                 } else {
-                    resultBox?.removeAllViews()
-                    resultBox?.addView(connectionIssueCard(host))
+                    displayEmptyRemoteDashboard()
+                    resultBox?.addView(connectionIssueCard(host), 0)
                 }
             }
         }

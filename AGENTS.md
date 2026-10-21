@@ -1,3 +1,11 @@
+# Monitor Remoto 0.1.0-alpha.105
+
+- Alpha.105: navegação inferior fixa em `MobileNavigationUi.kt`, com layout principal em `MainActivity.kt`. Não recriar a barra inferior dentro da ScrollView.
+- Os atalhos remotos são duas colunas, com Tela/Arquivos/Câmeras/Localização destacados; manter todas as 12 ações e seus consentimentos.
+- Dados `RemoteConnectionManager.cached` não são prova de conexão permanente. Não expandir permissões, acesso a arquivos ou operações remotas durante ajustes visuais.
+- Preservar o comportamento alpha.104 dos sockets, do serviço e da revogação de chaves. Próxima versão alpha.106/versionCode 106, com sincronização de documentação e validador.
+- Executar `tools/check_distribution.py`, compilação Gradle/CI e testes em telas pequenas/fontes ampliadas antes de instalar.
+
 # Monitor Remoto 0.1.0-alpha.104
 
 - A alpha.104 fecha todos os sockets aceitos ao parar/reiniciar o listener; manter cancelamento de tarefas e limite de fila, e não permitir respostas após troca/revogação da chave de pareamento.

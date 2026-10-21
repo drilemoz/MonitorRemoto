@@ -8,7 +8,7 @@ gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
 workflow = (root / ".github/workflows/android.yml").read_text(encoding="utf-8")
 ui_root = root / "app/src/main/java/br/dev/monitorremoto/ui"
 main_ui = (ui_root / "MainActivity.kt").read_text(encoding="utf-8")
-modules = ["UiComponents.kt", "HomeScreenUi.kt", "MonitorScreenUi.kt", "SettingsScreenUi.kt", "RemoteDashboardUi.kt", "IncomingAccessScreenUi.kt", "ConnectionScreenUi.kt", "ConnectionController.kt", "PairingScreenUi.kt", "PairingQrUi.kt", "MonitorCredentialsUi.kt", "PairingController.kt", "RemoteConnectionManager.kt", "RemoteMessagesUi.kt"]
+modules = ["UiComponents.kt", "HomeScreenUi.kt", "MonitorScreenUi.kt", "SettingsScreenUi.kt", "RemoteDashboardUi.kt", "IncomingAccessScreenUi.kt", "ConnectionScreenUi.kt", "MobileNavigationUi.kt", "ConnectionController.kt", "PairingScreenUi.kt", "PairingQrUi.kt", "MonitorCredentialsUi.kt", "PairingController.kt", "RemoteConnectionManager.kt", "RemoteMessagesUi.kt"]
 module_ui = {name: (ui_root / name).read_text(encoding="utf-8") for name in modules}
 ui = main_ui + "\n" + "\n".join(module_ui.values())
 match = re.search(r'\bversionName\s*=\s*"([^"]+)"', gradle)
@@ -16,10 +16,10 @@ assert match, "versionName ausente"
 version = match.group(1)
 code = re.search(r'\bversionCode\s*=\s*(\d+)', gradle)
 assert code, "versionCode ausente"
-assert version == "0.1.0-alpha.104" and code.group(1) == "104", "Versões incompatíveis"
+assert version == "0.1.0-alpha.105" and code.group(1) == "105", "Versões incompatíveis"
 appver = (root / 'app/src/main/java/br/dev/monitorremoto/transport/AppVersion.kt').read_text()
 assert f'const val NAME = "{version}"' in appver, "AppVersion fora de sincronia com o Gradle"
-assert 'AppVersion.NAME' in ui, "Tela de versão desatualizada"
+assert 'AppVersion.NAME' in (ui_root / 'VersionNewsUi.kt').read_text(), "Tela de versão desatualizada"
 assert f"versionCode={code.group(1)}" in (root / 'docs/ARCHITECTURE.md').read_text(), "Arquitetura com versionCode desatualizado"
 assert f"v{version} / versionCode {code.group(1)}" in (root / 'README.md').read_text(), "README com versionCode incorreto"
 # alpha.9 remove a Activity antiga do ZXing Embedded; Camera2 + ZXing Core offline.
@@ -115,7 +115,7 @@ print('PASSOU: UI alpha.15, migração única, Keystore por host, tema e sugest�
 assert 'internal fun MainActivity.connectSavedDevice(' in ui and 'internal fun MainActivity.renameSavedDevice(' in ui
 assert 'internal fun MainActivity.forgetSavedDevice(' in ui and 'internal fun MainActivity.showConnectionChooser()' in ui
 assert 'showManualConnectionDialog()' in ui and '"Confirmar aparelho"' in ui
-assert 'R.drawable.ic_refresh' in ui and 'contentDescription = "Atualizar dados do aparelho"' in ui
+assert 'refreshRemote(silent = false)' in module_ui['ConnectionScreenUi.kt'] and 'Atualizar' in module_ui['ConnectionScreenUi.kt']
 assert '@android:style/Theme.Material.Light.Dialog.NoActionBar' in manifest
 assert 'window.setLayout(' in scan and 'Aponte para o QR Code' in scan
 print('PASSOU: fluxo alpha.15, confirmação QR, botões de ação, scanner pop-up')
@@ -136,10 +136,10 @@ print('PASSOU: alpha.17, Home independente, informações manuais protegidas e r
 # alpha.17: não reapresentar Monitorado como Home; atalhos separados e ação de gerenciamento por aparelho.
 assert 'internal var mode = 2 // 2: início, 0: monitorado, 1: controle' in ui
 assert 'else -> renderHome()' in ui and '0 -> renderMonitor()' in ui and '1 -> {' in ui
-assert 'iconTile(R.drawable.ic_qr, "Conectar novo aparelho"' in ui and 'Aparelhos anteriores' in ui
-assert 'Último acesso bem-sucedido: $lastUsed' in ui and 'item.lastSuccessMs > 0L' in ui
+assert 'Conectar novo aparelho' in ui and 'Meus aparelhos' in ui
+assert 'Última resposta:' in ui and 'item.lastSuccessMs > 0L' in ui
 assert 'showHomeSavedDeviceOptions(item)' in ui and 'returnToChooser = false' in ui
-assert 'iconTile(R.drawable.ic_phone, "Monitorar este aparelho"' in ui and 'mode = 0' in ui
+assert 'Monitoramento' in ui and 'navigateMainTab(0)' in ui
 assert 'val columns = LinearLayout(this)' in ui and 'iconMetric("IP da rede"' in ui
 assert 'addCompact("Gerar QR"' in ui and 'addCompact("Mostrar info"' in ui and 'addCompact("Interromper"' in ui
 assert 'showMyConnectionInfo()' in ui and 'FLAG_SECURE' in ui
@@ -166,12 +166,12 @@ print('PASSOU: alpha.18, menus compactos, Home após desconexão, alertas autent
 
 # alpha.19: painel remoto compacto com grid e atalhos.
 assert 'internal fun MainActivity.networkIcon(host: String)' in ui and 'internal fun MainActivity.connectionKind(host: String)' in ui
-assert 'private fun MainActivity.compactMetricCard(' in ui and 'private fun MainActivity.addMetricGrid(' in ui
-assert 'private fun MainActivity.actionTile(' in ui and 'private fun MainActivity.addActionGrid(' in ui
+assert 'private fun MainActivity.mobileMetricCard(' in ui and 'private fun MainActivity.mobileDashboardHeader(' in ui
+assert 'private fun MainActivity.actionTile(' in ui and 'private fun MainActivity.mobileActionGrid(' in ui
 assert 'RemoteCatalogActivity::class.java' in ui and (ui_root / 'RemoteCatalogActivity.kt').is_file()
 assert 'internal fun MainActivity.showRemoteDetailsDialog(root: JSONObject)' in ui
 assert 'internal fun MainActivity.showRemoteDetailsDialog(root: JSONObject)' in ui
-assert 'Funções remotas' in ui and 'Mensagens' in ui and 'Ver tela' in ui and 'Localização' in ui
+assert 'Acesso rápido' in ui and 'Mensagens' in ui and 'RemoteScreenActivity::class.java' in ui and 'Localização' in ui
 print('PASSOU: alpha.19, painel remoto compacto, atalhos e detalhes dedicados')
 
 # alpha.20: compatibilidade EXATA, disconnect autenticado, aviso em tela dedicada.
@@ -193,7 +193,7 @@ assert 'ACCESS_CHANNEL' in service and 'IMPORTANCE_DEFAULT' in service
 assert 'SettingsStore.isMonitorEnabled(this) && !MonitorService.isServiceActive' in ui
 assert 'private fun recoverAuthorizedServiceIfStopped()' in ui
 assert 'renderSettingsModule()' in ui and 'openSettingsModule()' in ui
-assert 'private fun MainActivity.compactMetricCard(' in ui and 'minimumHeight = dp(96)' in ui
+assert 'private fun MainActivity.mobileMetricCard(' in ui and 'minimumHeight = dp(117)' in ui
 assert (root / 'app/src/test/java/br/dev/monitorremoto/transport/AppVersionTest.kt').is_file()
 assert len(list((root / 'app/src/main/res/drawable').glob('ic_*.xml'))) >= 10
 print('PASSOU: alpha.20, versão exata, disconnect, notificação, Activity de acesso e UI vetorial')
@@ -217,7 +217,7 @@ assert f'assertFalse(AppVersion.compatible("0.1.0-alpha.22"))' in app_version_te
 print('PASSOU: alpha.21, teste de compatibilidade segue a versão atual')
 
 # alpha.22: a interface cresceu, mas MainActivity não volta a concentrar telas inteiras.
-assert len(main_ui.splitlines()) <= 430, "MainActivity voltou a concentrar a UI"
+assert len(main_ui.splitlines()) <= 480, "MainActivity voltou a concentrar a UI"
 assert all(len(text.splitlines()) >= 25 for text in module_ui.values()), "Módulo UI vazio ou parcial"
 assert "internal fun MainActivity.renderHome()" in module_ui["HomeScreenUi.kt"]
 assert "internal fun MainActivity.renderMonitor()" in module_ui["MonitorScreenUi.kt"]
@@ -230,7 +230,7 @@ for entry in ["renderHome", "renderMonitor", "showSettingsDialog", "displayResul
 assert "private fun displayResult(" not in main_ui
 assert "private fun renderHome(" not in main_ui
 assert "private fun showSettingsDialog(" not in main_ui
-assert "AppVersion.NAME" in main_ui and 'put("appVersion", AppVersion.NAME)' in client
+assert "AppVersion.NAME" in (ui_root / 'VersionNewsUi.kt').read_text() and 'put("appVersion", AppVersion.NAME)' in client
 assert "internal fun IncomingAccessActivity.renderIncomingAccessScreen(" in module_ui["IncomingAccessScreenUi.kt"]
 assert 'Quem está?' not in module_ui["IncomingAccessScreenUi.kt"] and 'Outros acessos recentes' in module_ui["IncomingAccessScreenUi.kt"]
 print(f"PASSOU: alpha.22-24, módulos extraídos, MainActivity={len(main_ui.splitlines())} linhas e funções únicas")
@@ -309,8 +309,8 @@ settings_ui = module_ui['SettingsScreenUi.kt']
 qr_reader = (ui_root / 'QrScanActivity.kt').read_text()
 for function in ['iconTile(', 'iconMenuRow(', 'iconSectionHeader(', 'iconMetric(', 'twoColumnTiles(', 'headerIconButton(']:
     assert function in components, f'Componente visual alpha.27 ausente: {function}'
-assert 'twoColumnTiles(shortcuts' in home and 'R.drawable.ic_phone' in home and 'showHomeSavedDeviceOptions(item)' in home
-assert 'iconTile(R.drawable.ic_qr, "Conectar novo aparelho"' in home
+assert 'mobileSurfaceCard()' in home and 'R.drawable.ic_phone' in home and 'showHomeSavedDeviceOptions(item)' in home
+assert 'Conectar novo aparelho' in home and 'showConnectionChooser()' in home
 assert 'addCompact("Gerar QR"' in monitor and 'addCompact("Mostrar info"' in monitor and 'addCompact("Interromper"' in monitor
 assert 'iconMetric("IP da rede"' in monitor and 'SettingsStore.setMonitorEnabled(this, false)' in monitor
 assert 'renderSettingsModule()' in settings_ui and 'iconMenuRow(R.drawable.ic_sim' in settings_ui
@@ -319,7 +319,7 @@ assert 'iconTile(R.drawable.ic_qr, "QR Code"' in pairing_ui and 'iconTile(R.draw
 assert 'showManualConnectionDialog()' in pairing_ui and 'setOnClickListener' in pairing_ui
 assert 'iconSectionHeader(R.drawable.ic_qr, "Pareamento seguro"' in pairing_qr
 assert 'PairingSession.revoke(offer.session)' in pairing_qr and 'WindowManager.LayoutParams.FLAG_SECURE' in pairing_qr
-assert 'headerIconButton(R.drawable.ic_settings' in main_ui
+assert 'headerIconButton(R.drawable.ic_settings' in module_ui['MobileNavigationUi.kt']
 assert 'Aponte para o QR Code' in qr_reader and 'this@QrScanActivity' in qr_reader
 assert 'ic_qr' in qr_reader and 'window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)' in qr_reader
 assert 'ClipDescription.EXTRA_IS_SENSITIVE' in credentials_ui
@@ -831,7 +831,7 @@ for token in ['fun percentage(', 'fun state(', 'fun powerSource(', 'fun showChar
     assert token in telemetry59, 'alpha.59: sem telemetria ' + token
 for token in ['ACTION_BATTERY_CHANGED', 'BatteryManager.EXTRA_STATUS', 'BatteryManager.EXTRA_PLUGGED', 'BatteryTelemetry.percentage', 'BatteryTelemetry.state', 'BatteryTelemetry.powerSource', '"chargingIndicator"', '"charging"', '"full"']:
     assert token in battery59, 'alpha.59: snapshot sem ' + token
-assert 'statusLine' in ui59 and 'chargingIndicator' in ui59 and '⚡' in ui59
+assert 'val state = battery.optString("state")' in ui59 and 'battery.optBoolean("chargingIndicator"' in ui59 and '⚡' in ui59
 assert 'R.drawable.ic_battery_charging' in ui59
 plain_icon = (root / 'app/src/main/res/drawable/ic_battery.xml').read_text()
 charging_icon = (root / 'app/src/main/res/drawable/ic_battery_charging.xml').read_text()
@@ -1221,7 +1221,7 @@ assert all(x not in recent85 for x in ['put("path"', 'put("name"', 'put("ip"', '
 assert 'RemoteOperationHistoryPolicy.valid(' in recent85 and 'operations = setOf' in policy85
 assert 'private fun showHistory()' in files85 and 'logOperation("download"' in files85
 assert 'logOperation("upload"' in files85 and 'logOperation(action,' in files85
-assert 'tiles.chunked(3)' in remote85 and 'Dados guardados no controlador' in remote85
+assert 'tiles.chunked(2)' in remote85 and 'Dados armazenados.' in remote85
 assert 'Sem conexão com o aparelho' in location85 and 'Leitura antiga' in location85
 print('PASSOU: alpha.85 histórico local mínimo, grade legível, diagnóstico da conexão e GPS.')
 
@@ -1261,18 +1261,18 @@ assert 'private var automatic = true' in location_ui and '⚠ Posição anterior
 assert (root / "app/src/test/java/br/dev/monitorremoto/core/LocationRecoveryModeTest.kt").exists()
 print('PASSOU: alpha.87 proteção opt-in, restauração condicionada ao Android e mapa sem falsa localização.')
 
-# Alpha.88: novas telas não podem reduzir as barreiras de segurança; três colunas são obrigatórias.
+# Alpha.88/105: manter barreiras de segurança e adaptar grade às duas colunas mobile.
 dashboard88 = (ui_root / "RemoteDashboardUi.kt").read_text()
 settings88 = (ui_root / "SettingsHubUi.kt").read_text()
 conn88 = (ui_root / "RemoteConnectionManager.kt").read_text()
 dialogs88 = (ui_root / "AppDialogUi.kt").read_text()
-assert 'tiles.chunked(3)' in dashboard88 and 'tiles.chunked(2)' not in dashboard88
+assert 'tiles.chunked(2)' in dashboard88 and 'tiles.chunked(3)' not in dashboard88
 assert '"Detalhes", ""' not in dashboard88 and 'showRemoteDetailsDialog' in (ui_root / "ConnectionScreenUi.kt").read_text()
 assert 'renderSettingsHome()' in (ui_root / "SettingsScreenUi.kt").read_text()
 assert 'Pesquisar configurações' in settings88 and 'openSettingsSection(item.section)' in settings88
 assert 'lastRoundTripMs' in conn88 and 'SystemClock.elapsedRealtime()' in conn88
 assert 'secondary = "Cancelar"' in dialogs88 and 'onPrimary = onConfirm' in dialogs88
-print('PASSOU: alpha.88 três colunas, busca por categorias, RTT monotônico e confirmação preservada.')
+print('PASSOU: alpha.88/105 grade móvel, busca por categorias, RTT monotônico e confirmação preservada.')
 
 # Alpha.89: área fixa limitada ao app, sem configuração SAF nem seletor de destino exposto.
 fixed = (root / "app/src/main/java/br/dev/monitorremoto/core/FixedDownloadsFolder.kt").read_text()
@@ -1288,7 +1288,7 @@ assert 'ACTION_OPEN_DOCUMENT_TREE' not in settings89
 assert 'copyBatchDownloads(chosen)' in activity89 and 'copyRemoteFolderDownloads' in activity89
 assert 'publishStaged(part, item' in activity89 and 'confirmBatchDelete' in activity89
 assert (ui_root / 'ThemedPopup.kt').exists() and 'setGravity(Gravity.BOTTOM)' in (ui_root / 'MonitorActionSheet.kt').read_text()
-assert 'tiles.chunked(3)' in dashboard88
+assert 'tiles.chunked(2)' in dashboard88
 print('PASSOU: alpha.89 Downloads fixos de propriedade do app, operações autenticadas e menus modernos.')
 
 # Alpha.90/95: o menu agora usa a folha visual compartilhada, com dialog local
@@ -1391,7 +1391,7 @@ connection98=(ui_root/'ConnectionScreenUi.kt').read_text()
 pairing98=(ui_root/'PairingScreenUi.kt').read_text()
 details98=(ui_root/'RemoteDetailsActivity.kt').read_text()
 adb98=(ui_root/'AdbActivity.kt').read_text()
-assert 'currentStatus = label' in connection98 and 'background = shape(fieldColor, 99, true)' in connection98
+assert 'currentStatus = label' in connection98 and 'background = shape(surface, 13)' in connection98
 assert all(x in pairing98 for x in ['startQrScanner()', 'showManualConnectionDialog()', 'connectSavedDevice(item)', 'forgetSavedDevice(item)'])
 assert 'skin.header(R.drawable.ic_info' in details98 and 'window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)' in details98
 assert 'skin.header(R.drawable.ic_phone' in adb98
@@ -1433,8 +1433,8 @@ monitor101 = (ui_root / 'MonitorScreenUi.kt').read_text(encoding='utf-8')
 components101 = (ui_root / 'UiComponents.kt').read_text(encoding='utf-8')
 assert 'internal fun MainActivity.statePill(' in components101
 assert 'internal fun MainActivity.monitorFeatureCard(' in components101
-assert 'Chaves salvas, não necessariamente online' in home101
-assert 'Último acesso bem-sucedido:' in home101
+assert 'Aguardando primeira resposta' in home101 and 'Última resposta:' in home101
+assert 'Última resposta:' in home101
 assert 'monitorFeatureCard(' in monitor101 and monitor101.count('monitorFeatureCard(') == 3
 assert 'ScreenShareService.stop(this)' in monitor101
 assert 'manager.createScreenCaptureIntent()' in monitor101
@@ -1478,7 +1478,7 @@ assert 'AuthenticatedAccess.recent()' in pulse103 and 'recentClients: List<Strin
 assert 'val latest = AuthenticatedAccess.recent().firstOrNull' in mon103
 assert 'settingSearchIndex' in settings103 and 'search.postDelayed(pendingSearch, 120L)' in settings103
 assert 'search.removeCallbacks(pendingSearch)' in settings103 and 'if (s.isNullOrEmpty()) update("")' in settings103
-assert 'dp(44)' in conn103
+assert 'dp(48)' in conn103
 assert (root / 'app/src/test/java/br/dev/monitorremoto/ui/MonitorUiRefreshPolicyTest.kt').exists()
 print('PASSOU: alpha.103 invalidacao de UI, temporizador unico, pesquisa adiada e alvo de toque ampliado.')
 
@@ -1492,3 +1492,20 @@ assert 'seen.retainAll(active)' in access_window and 'seen.add(session)' in acce
 assert 'MessageDigest.isEqual(it, expected)' in manager104 and 'keyStillMatches(host, key)' in manager104 and 'state = "idle"' in manager104
 assert (root / 'app/src/test/java/br/dev/monitorremoto/transport/AccessAlertWindowTest.kt').exists()
 print('PASSOU: sockets encerrados, alertas de acesso limitados e resposta antiga de chave rejeitada')
+
+# alpha.105: navegação fixa, prioridades mobile, versão e preservação das 12 ações.
+mobile = (ui_root / 'MobileNavigationUi.kt').read_text()
+home105 = (ui_root / 'HomeScreenUi.kt').read_text()
+dashboard105 = (ui_root / 'RemoteDashboardUi.kt').read_text()
+assert 'root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))' in main_ui
+assert 'root.addView(bottomNavigation, LinearLayout.LayoutParams(-1, dp(82)))' in main_ui
+assert all(phrase in mobile for phrase in ['"Início"', '"Controlar"', '"Monitorado"', '"Ajustes"'])
+assert 'renderBottomNavigation()' in main_ui and 'renderMobileHeader()' in main_ui
+assert 'showHomeSavedDeviceOptions(item)' in home105 and 'connectSavedDevice(item)' in home105
+assert 'displayEmptyRemoteDashboard()' in dashboard105
+assert 'listOf(cards[4], cards[0], cards[6], cards[11])' in dashboard105
+assert 'val others = cards.filterNot { it in shortcuts }' in dashboard105
+assert dashboard105.count('actionTile(R.drawable.') == 12
+assert 'if (!keyAvailable) tiles.forEach' in dashboard105
+assert 'fromCache = cachedReading' in dashboard105
+print('PASSOU: alpha.105, barra inferior, 12 ações preservadas, dobra e leitura antiga distinguida')

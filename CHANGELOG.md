@@ -1,3 +1,12 @@
+## 0.1.0-alpha.105 (versionCode 105) | 20/10/2026
+
+- Redesenhada a interface principal para smartphones, com barra inferior fixa de quatro destinos e rolagem independente.
+- Início: lista de aparelhos salvos com última resposta identificada, acesso direto aos controles e conexão por QR/IP; painel Monitoramento deste telefone.
+- Controlar: seleção e gerenciamento separados, estado e última consulta sem alegar conexão persistente, botões Atualizar e Detalhes, métricas legíveis e rede em linha própria.
+- Grade de duas colunas com quatro atalhos e oito funções expansíveis, sem remover recursos da alpha.104.
+- Telas Monitorado e Ajustes passaram a compartilhar o novo cabeçalho e navegação; funcionalidade interna foi preservada.
+- Lógica remota, AES-GCM, consentimentos e protocolo inalterados; build Android e testes físicos ainda pendentes.
+
 ## 0.1.0-alpha.104 (versionCode 104) | 17/10/2026
 - Ao interromper ou recuperar o listener, fechar sockets TCP dos clientes em execução e aguardando na fila; evita manter transmissões antigas após a sessão ter sido encerrada.
 - Limitar o histórico de alertas de acesso às sessões autenticadas recentes, preservando aviso de novo acesso sem acumular identificadores antigos na RAM.

@@ -1,3 +1,11 @@
+# Monitor Remoto v0.1.0-alpha.105 · Interface para smartphones
+
+Nesta versão, a interface Início e Controlar foi redesenhada com foco em celulares. Há uma barra inferior fixa com Início, Controlar, Monitorado e Ajustes; os dados do aparelho e os comandos são organizados em cartões maiores, com quatro acessos rápidos e oito funções expansíveis.
+
+Aparelhos salvos não são apresentados como permanentemente conectados. Permissões locais, autenticação e confirmações dos módulos existentes não foram alteradas.
+
+**Instale a mesma versão nos dois aparelhos.** Validação de compilação Android na CI e teste real de UI continuam necessários antes de considerar esta versão aprovada para uso diário.
+
 # Monitor Remoto v0.1.0-alpha.104 · Estabilidade de conexão
 
 - Recuperação do listener fecha sockets em execução e enfileirados.

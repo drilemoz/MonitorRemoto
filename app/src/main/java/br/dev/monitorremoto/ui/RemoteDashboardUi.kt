@@ -1,7 +1,6 @@
 package br.dev.monitorremoto.ui
 
 import android.app.AlertDialog
-import android.graphics.Color
 import br.dev.monitorremoto.core.BatteryTemperaturePolicy
 import br.dev.monitorremoto.core.RemoteOperationHistory
 import br.dev.monitorremoto.core.RemoteOperationHistoryPolicy
@@ -14,142 +13,185 @@ import java.util.Locale
 import br.dev.monitorremoto.R
 import br.dev.monitorremoto.core.SettingsStore
 
-/** Painel deliberadamente enxuto. Informações técnicas detalhadas ficam em RemoteDetailsActivity. */
+/** A atualização mostra uma fotografia autenticada do estado, não um canal persistente. */
 internal fun MainActivity.displayResult(root: JSONObject, fromCache: Boolean = false) {
     val container = resultBox ?: return
     container.removeAllViews()
-    val battery = root.optJSONObject("battery") ?: return
+    val battery = root.optJSONObject("battery")
+    if (battery == null) {
+        displayEmptyRemoteDashboard()
+        return
+    }
     val network = root.optJSONObject("network")
-    val deviceState = root.optJSONObject("deviceState")
-    val percentage = if (!battery.has("levelPercent") || battery.isNull("levelPercent")) "—"
-        else battery.optInt("levelPercent", -1).takeIf { it in 0..100 }?.let { "$it%" } ?: "—"
-    val status = battery.optString("state").takeIf {
+    val level = if (battery.has("levelPercent") && !battery.isNull("levelPercent"))
+        battery.optInt("levelPercent", -1).takeIf { it in 0..100 }?.let { "$it%" } ?: "--%"
+        else "--%"
+    val charging = battery.optBoolean("chargingIndicator", false)
+    val state = battery.optString("state").takeIf {
         it in setOf("Carregando", "Descarregando", "Cheia", "Não carregando")
-    } ?: "Desconhecido"
+    } ?: "Sem leitura"
     val source = battery.optString("powerSource").takeIf { it in setOf("USB", "Tomada", "Sem fio", "Base") }
-    val statusLine = if (source == null) status else "$status · $source"
-    val chargingIndicator = battery.optBoolean("chargingIndicator", false)
-    val temperature = if (battery.isNull("temperatureC")) "—" else
-        String.format(Locale.getDefault(), "%.1f °C", battery.optDouble("temperatureC"))
+    val temperature = if (battery.has("temperatureC") && !battery.isNull("temperatureC"))
+        String.format(Locale.getDefault(), "%.1f °C", battery.optDouble("temperatureC")) else "-- °C"
+    val tempC = if (battery.has("temperatureC") && !battery.isNull("temperatureC"))
+        battery.optDouble("temperatureC") else null
+    val tempZone = BatteryTemperaturePolicy.zone(tempC)
+    val liveReading = !fromCache && remoteConnection.state == "connected"
+    mobileDashboardHeader(container, "Informações do aparelho",
+        if (liveReading) "Consulta recente" else "Última leitura")
+    val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+    row.addView(mobileMetricCard(if (charging) R.drawable.ic_battery_charging else R.drawable.ic_battery,
+        "Bateria", if (charging) "$level ⚡" else level,
+        listOfNotNull(state, source).joinToString(" · ")) { showRemoteThermalDialog(battery, fromCache) },
+        LinearLayout.LayoutParams(0, -2, 1f))
+    row.addView(View(this), LinearLayout.LayoutParams(dp(9), 1))
+    row.addView(mobileMetricCard(R.drawable.ic_thermometer, "Temperatura", temperature,
+        BatteryTemperaturePolicy.label(tempZone), tempZone) { showRemoteThermalDialog(battery, fromCache) },
+        LinearLayout.LayoutParams(0, -2, 1f))
+    container.addView(row)
+    sectionGap(container, 9)
     val networkType = network?.optString("type")?.ifBlank { "Indisponível" } ?: "Indisponível"
     val ssid = network?.optString("wifiSsid")?.takeIf { it.isNotBlank() && it != "null" }
     val signal = network?.optInt("wifiRssiDbm", 0)?.takeIf { it in -110..-10 }?.let { "$it dBm" }
-    val wifiNote = when {
-        ssid != null -> listOfNotNull(ssid, signal).joinToString(" · ")
-        network?.optBoolean("wifiPermission") == false -> "SSID: autorizar no monitorado"
-        else -> "SSID indisponível"
-    }
-    val tempC = if (battery.has("temperatureC") && !battery.isNull("temperatureC")) battery.optDouble("temperatureC") else null
-    val tempZone = BatteryTemperaturePolicy.zone(tempC)
-    val items = listOf(
-        compactMetricCard(if (chargingIndicator) R.drawable.ic_battery_charging else R.drawable.ic_battery, "Bateria",
-            if (chargingIndicator) "$percentage ⚡" else percentage, statusLine, onClick = {
-                showRemoteThermalDialog(battery, fromCache)
-            }),
-        compactMetricCard(R.drawable.ic_thermometer, "Temperatura", temperature, BatteryTemperaturePolicy.label(tempZone), tempZone, onClick = {
-            showRemoteThermalDialog(battery, fromCache)
-        }),
-        compactMetricCard(R.drawable.ic_wifi, "Rede", networkType, wifiNote, onClick = {
-            showAppNotice("Rede do monitorado", if (ssid == null && network?.optBoolean("wifiPermission") == false)
-                "No celular monitorado, abra Monitor Remoto → Configurações → Diagnóstico → Nome e sinal do Wi-Fi. Autorize Localização precisa e ative a localização do Android. Não é possível liberar essa permissão remotamente."
-                else "Tipo: $networkType\n${ssid ?: "SSID indisponível"}\n${signal ?: "RSSI indisponível"}")
-        }),
-    )
-    // Resultado de polling autenticado não significa canal persistente.
-    val liveReading = !fromCache && remoteConnection.state == "connected"
-    container.addView(dialogCardRow(
-        if (liveReading) "✓ Resposta autenticada" else "◷ Dados guardados no controlador",
-        if (liveReading) "Resposta ${formatDate(remoteConnection.lastSuccessMs)} · ${remoteConnection.lastRoundTripMs?.let { "${it} ms" } ?: "tempo indisponível"}"
-        else "Esta leitura não confirma conexão atual. Última resposta: ${if (remoteConnection.lastSuccessMs > 0L) formatDate(remoteConnection.lastSuccessMs) else "não registrada"}",
-        "ⓘ") {
-        showAppNotice("Estado da conexão", "O Monitor Remoto consulta cada dado mediante requisição autenticada; não mantém um canal conectado permanentemente.\n" +
-            "Estado: ${if (liveReading) "última consulta respondida" else "leitura armazenada"}\n" +
-            "Método: ${remoteConnection.method}\n" +
-            "Duração da requisição: ${remoteConnection.lastRoundTripMs?.let { "${it} ms" } ?: "não medida"}\n" +
-            "Última resposta: ${if (remoteConnection.lastSuccessMs > 0L) formatDate(remoteConnection.lastSuccessMs) else "não disponível"}")
+    val wifiLabel = if (ssid != null) listOfNotNull(ssid, signal).joinToString(" · ")
+        else if (network?.optBoolean("wifiPermission") == false) "SSID: permissão pendente no monitorado"
+        else "SSID indisponível"
+    container.addView(mobileNetworkRow(networkType, wifiLabel) {
+        showAppNotice("Rede do monitorado", if (ssid == null && network?.optBoolean("wifiPermission") == false)
+            "No celular monitorado: Configurações → Diagnóstico → Nome e sinal do Wi-Fi. Autorize Localização precisa e ative a localização. A permissão não pode ser concedida remotamente."
+            else "Tipo: $networkType\n${ssid ?: "SSID indisponível"}\n${signal ?: "RSSI indisponível"}")
     })
     sectionGap(container, 9)
-    addMetricGrid(container, items)
-    sectionGap(container, 8)
-    if (deviceState != null) {
-        val screen = deviceState.optString("screenState").takeIf { it in setOf("Ligada", "Desligada", "Ambiente") } ?: "Desconhecida"
-        val locked = when { deviceState.isNull("deviceLocked") -> "? Bloqueio"; deviceState.optBoolean("deviceLocked") -> "Bloqueado"; else -> "Desbloqueado" }
-        val camera = when { deviceState.isNull("cameraPossiblyBusy") -> "Câmera ?"; deviceState.optBoolean("cameraPossiblyBusy") -> "Em uso?"; else -> "Disponível" }
-        val stateRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        val statuses = listOf(
-            Triple(R.drawable.ic_monitor, "Tela $screen", screen == "Desligada"),
-            Triple(R.drawable.ic_shield, locked, locked == "Bloqueado"),
-            Triple(R.drawable.ic_remote_camera, camera, false)
-        )
-        statuses.forEachIndexed { i, status ->
-            val (icon, caption, accent) = status
-            val cell = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
-                background = shape(fieldColor, 11)
-                setPadding(dp(4), dp(4), dp(4), dp(4))
-                addView(vectorIcon(icon, 16, if (accent) highlight else ink))
-                addView(label(caption, 9.5f, muted = true).apply { maxLines = 1; setPadding(dp(3), 0, 0, 0) })
-                contentDescription = caption
-                isClickable = true; isFocusable = true
-                setOnClickListener {
-                    showAppNotice("Diagnóstico remoto", "Tela: $screen\n$locked\nCâmera: $camera. Ocupação não comprova gravação do Minha Câmera.")
-                }
-            }
-            stateRow.addView(cell, LinearLayout.LayoutParams(0, -2, 1f).apply { if (i < 2) rightMargin = dp(5) })
-        }
-        container.addView(stateRow)
-        sectionGap(container, 8)
-        val current = deviceState.optString("foregroundPackage").takeIf { it.isNotBlank() && it != "null" }
-        val last = deviceState.optString("lastForegroundPackage").takeIf { it.isNotBlank() && it != "null" }
-        val lastAt = if (!deviceState.isNull("lastForegroundAt")) deviceState.optLong("lastForegroundAt") else 0L
-        val permitted = deviceState.optBoolean("usagePermission")
-        val appCaption = when {
-            !permitted -> "Acesso ao uso pendente no monitorado"
-            current != null -> "Em primeiro plano: $current"
-            last != null -> "Último visto: $last" + if (lastAt > 0L) " · ${formatDate(lastAt)}" else ""
-            else -> "Aplicativo não identificado"
-        }
-        container.addView(dialogCardRow("Aplicativo observado", appCaption, "›") {
-            showAppNotice("Aplicativo observado", if (!permitted)
-                "No aparelho monitorado: Monitor Remoto → Configurações → Diagnóstico → Aplicativo visível → Acesso ao uso. Não é possível conceder essa permissão pelo controlador."
-                else "${current?.let { "Agora: $it" } ?: "Nenhum aplicativo atual identificado"}\n${last?.let { "Último visto: $it" } ?: "Sem histórico observado"}\nIsso não comprova que o Minha Câmera esteja gravando.")
-        })
-    }
+    container.addView(label(if (liveReading)
+        "Resposta autenticada: ${formatDate(remoteConnection.lastSuccessMs)}"
+        else "Dados armazenados. Última resposta: ${if (remoteConnection.lastSuccessMs > 0) formatDate(remoteConnection.lastSuccessMs) else "desconhecida"}",
+        11f, muted = true).apply { setPadding(dp(3), 0, 0, 0) })
     root.optJSONObject("healthAlerts")?.let { health ->
-        val level = health.optString("level")
-        if (level == "WARNING" || level == "CRITICAL") {
-            sectionGap(container, 7)
+        if (health.optString("level") in setOf("WARNING", "CRITICAL")) {
+            sectionGap(container, 10)
             container.addView(dialogCardRow("Alerta de saúde", health.optString("reason", "Condição desconhecida"), "!", accent = true) {
-                showAppNotice("Saúde do monitorado", "${health.optString("reason")}\nNotificações remotas: Configurações → Alertas e proteção. Interrupção automática do Minha Câmera não está disponível.")
+                showAppNotice("Saúde do monitorado", health.optString("reason"))
             })
         }
     }
-    sectionGap(container, 12)
+    sectionGap(container, 18)
+    renderRemoteActions(container, root, fromCache)
+    val selectedHost = SettingsStore.getRemoteHost(this)
+    val recent = RemoteOperationHistory.read(this, selectedHost).firstOrNull()
+    if (recent != null) {
+        sectionGap(container, 12)
+        container.addView(dialogCardRow("Atividade recente de arquivos",
+            "${RemoteOperationHistoryPolicy.label(recent.operation)} · ${recent.outcome} · ${recent.done}/${recent.total} item(ns)", "›") {
+            startActivity(Intent(this, RemoteFilesActivity::class.java).apply {
+                putExtra(RemoteFilesActivity.EXTRA_HOST, selectedHost)
+                putExtra(RemoteFilesActivity.EXTRA_METHOD, remoteConnection.method)
+            })
+        })
+    }
+}
 
-    container.addView(label("Funções remotas", 17f, strong = true).apply { setPadding(0, 0, 0, dp(5)) })
-    container.addView(label("Toque para abrir · 12 funções · 3 colunas", 10.5f, muted = true).apply {
-        setPadding(0, 0, 0, dp(8))
+/** Os controles aparecem antes da primeira consulta, mas exigem aparelho pareado. */
+internal fun MainActivity.displayEmptyRemoteDashboard() {
+    val container = resultBox ?: return
+    container.removeAllViews()
+    mobileDashboardHeader(container, "Informações do aparelho", "Sem leitura")
+    val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+    row.addView(mobileMetricCard(R.drawable.ic_battery, "Bateria", "--%", "Carga indisponível") {
+        showAppNotice("Bateria", "Conecte e atualize o aparelho para consultar a bateria.")
+    }, LinearLayout.LayoutParams(0, -2, 1f))
+    row.addView(View(this), LinearLayout.LayoutParams(dp(9), 1))
+    row.addView(mobileMetricCard(R.drawable.ic_thermometer, "Temperatura", "-- °C", "Sem leitura") {
+        showAppNotice("Temperatura", "Conecte e atualize o aparelho para consultar a temperatura.")
+    }, LinearLayout.LayoutParams(0, -2, 1f))
+    container.addView(row)
+    sectionGap(container, 9)
+    container.addView(mobileNetworkRow("Rede do aparelho", "Tipo, SSID e sinal quando disponíveis") {
+        showAppNotice("Rede", "Nenhuma leitura de rede recebida deste aparelho.")
     })
-    val eventCount = root.optJSONArray("events")?.let { events ->
+    sectionGap(container, 10)
+    container.addView(label("Os dados serão exibidos depois de uma consulta autenticada.", 11.5f, muted = true))
+    sectionGap(container, 18)
+    renderRemoteActions(container, null, true)
+}
+
+private fun MainActivity.mobileDashboardHeader(parent: LinearLayout, title: String, side: String) {
+    val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+    row.addView(label(title, 16f, strong = true).apply { maxLines = 2 },
+        LinearLayout.LayoutParams(0, -2, 1f))
+    row.addView(label(side, 10.5f, muted = true).apply { gravity = Gravity.END })
+    parent.addView(row)
+    sectionGap(parent, 9)
+}
+
+private fun MainActivity.mobileMetricCard(icon: Int, title: String, value: String,
+    subtitle: String, temperatureZone: BatteryTemperaturePolicy.Zone? = null, onClick: () -> Unit): LinearLayout = LinearLayout(this).apply {
+    orientation = LinearLayout.VERTICAL
+    minimumHeight = dp(117)
+    val themed = when (temperatureZone) {
+        BatteryTemperaturePolicy.Zone.COLD -> if (darkTheme()) android.graphics.Color.rgb(35, 61, 78) else android.graphics.Color.rgb(224, 241, 252)
+        BatteryTemperaturePolicy.Zone.WARM -> if (darkTheme()) android.graphics.Color.rgb(91, 67, 35) else android.graphics.Color.rgb(255, 240, 214)
+        BatteryTemperaturePolicy.Zone.HOT -> if (darkTheme()) android.graphics.Color.rgb(100, 42, 47) else android.graphics.Color.rgb(255, 226, 227)
+        BatteryTemperaturePolicy.Zone.NORMAL -> fieldColor
+        else -> fieldColor
+    }
+    background = shape(themed, 20)
+    setPadding(dp(13), dp(12), dp(9), dp(11))
+    isClickable = true; isFocusable = true
+    contentDescription = "$title: $value. $subtitle"
+    setOnClickListener { onClick() }
+    val caption = LinearLayout(this@mobileMetricCard).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+    caption.addView(vectorIcon(icon, 19, dim), LinearLayout.LayoutParams(dp(21), dp(21)))
+    caption.addView(label(title, 12f, muted = true).apply { setPadding(dp(5), 0, 0, 0) })
+    addView(caption)
+    addView(label(value, 19f, strong = true).apply { setPadding(0, dp(6), 0, 0) })
+    addView(label(subtitle, 11f, muted = true).apply {
+        maxLines = 2
+        setPadding(0, dp(5), 0, 0)
+    })
+}
+
+private fun MainActivity.mobileNetworkRow(title: String, subtitle: String, onClick: () -> Unit): LinearLayout =
+    LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        minimumHeight = dp(75)
+        background = shape(fieldColor, 19)
+        setPadding(dp(13), dp(12), dp(12), dp(12))
+        isClickable = true; isFocusable = true
+        contentDescription = "$title. $subtitle"
+        setOnClickListener { onClick() }
+        addView(vectorIcon(R.drawable.ic_wifi, 23, ink), LinearLayout.LayoutParams(dp(26), dp(26)))
+        val words = LinearLayout(this@mobileNetworkRow).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), 0, 0, 0) }
+        words.addView(label(title, 13.5f, strong = true).apply { setPadding(0, 0, 0, 0) })
+        words.addView(label(subtitle, 11.5f, muted = true).apply { setPadding(0, dp(3), 0, 0); maxLines = 2 })
+        addView(words, LinearLayout.LayoutParams(0, -2, 1f))
+        addView(label("›", 23f, muted = true))
+    }
+
+/** Quatro atalhos fixos + oito funções extras. A dobra não altera disponibilidade. */
+private fun MainActivity.renderRemoteActions(container: LinearLayout, snapshot: JSONObject?, cachedReading: Boolean) {
+    val host = SettingsStore.getRemoteHost(this)
+    val keyAvailable = host.isNotBlank() && br.dev.monitorremoto.core.RecentDevices.key(this, host) != null
+    val eventCount = snapshot?.optJSONArray("events")?.let { events ->
         (0 until events.length()).count { events.optJSONObject(it)?.optString("type") == "notificacao" }
     } ?: 0
     val cards = listOf(
         actionTile(R.drawable.ic_folder_download, "Arquivos", "Downloads fixos", enabled = true) {
             startActivity(Intent(this, RemoteFilesActivity::class.java).apply {
-                putExtra(RemoteFilesActivity.EXTRA_HOST, br.dev.monitorremoto.core.SettingsStore.getRemoteHost(this@displayResult))
+                putExtra(RemoteFilesActivity.EXTRA_HOST, br.dev.monitorremoto.core.SettingsStore.getRemoteHost(this@renderRemoteActions))
                 putExtra(RemoteFilesActivity.EXTRA_METHOD, remoteConnection.method)
             })
         },
         actionTile(R.drawable.ic_bell, "Alertas", if (eventCount > 0) "$eventCount evento(s)" else "", enabled = true) {
             startActivity(Intent(this, RemoteCatalogActivity::class.java).apply {
-                putExtra(RemoteCatalogActivity.EXTRA_HOST, br.dev.monitorremoto.core.SettingsStore.getRemoteHost(this@displayResult))
+                putExtra(RemoteCatalogActivity.EXTRA_HOST, br.dev.monitorremoto.core.SettingsStore.getRemoteHost(this@renderRemoteActions))
                 putExtra(RemoteCatalogActivity.EXTRA_METHOD, remoteConnection.method)
                 putExtra(RemoteCatalogActivity.EXTRA_TYPE, "notifications")
             })
         },
         actionTile(R.drawable.ic_phone, "Apps", "Instalados · autorizados", enabled = true) {
             startActivity(Intent(this, RemoteCatalogActivity::class.java).apply {
-                putExtra(RemoteCatalogActivity.EXTRA_HOST, br.dev.monitorremoto.core.SettingsStore.getRemoteHost(this@displayResult))
+                putExtra(RemoteCatalogActivity.EXTRA_HOST, br.dev.monitorremoto.core.SettingsStore.getRemoteHost(this@renderRemoteActions))
                 putExtra(RemoteCatalogActivity.EXTRA_METHOD, remoteConnection.method)
                 putExtra(RemoteCatalogActivity.EXTRA_TYPE, "apps")
             })
@@ -159,19 +201,19 @@ internal fun MainActivity.displayResult(root: JSONObject, fromCache: Boolean = f
         },
         actionTile(R.drawable.ic_monitor, "Tela", "Ao vivo · autorizado", enabled = true) {
             startActivity(Intent(this, RemoteScreenActivity::class.java).apply {
-                putExtra(RemoteScreenActivity.EXTRA_HOST, br.dev.monitorremoto.core.SettingsStore.getRemoteHost(this@displayResult))
+                putExtra(RemoteScreenActivity.EXTRA_HOST, br.dev.monitorremoto.core.SettingsStore.getRemoteHost(this@renderRemoteActions))
                 putExtra(RemoteScreenActivity.EXTRA_METHOD, remoteConnection.method)
             })
         },
         actionTile(R.drawable.ic_remote_camera, "Foto", "JPEG único · sem vídeo", enabled = true) {
             startActivity(Intent(this, RemotePhotoActivity::class.java).apply {
-                putExtra(RemotePhotoActivity.EXTRA_HOST, br.dev.monitorremoto.core.SettingsStore.getRemoteHost(this@displayResult))
+                putExtra(RemotePhotoActivity.EXTRA_HOST, br.dev.monitorremoto.core.SettingsStore.getRemoteHost(this@renderRemoteActions))
                 putExtra(RemotePhotoActivity.EXTRA_METHOD, remoteConnection.method)
             })
         },
         actionTile(R.drawable.ic_remote_camera, "Câmeras", "Ao vivo · início local", enabled = true) {
             startActivity(Intent(this, RemoteCameraActivity::class.java).apply {
-                putExtra(RemoteCameraActivity.EXTRA_HOST, br.dev.monitorremoto.core.SettingsStore.getRemoteHost(this@displayResult))
+                putExtra(RemoteCameraActivity.EXTRA_HOST, br.dev.monitorremoto.core.SettingsStore.getRemoteHost(this@renderRemoteActions))
                 putExtra(RemoteCameraActivity.EXTRA_METHOD, remoteConnection.method)
             })
         },
@@ -193,22 +235,52 @@ internal fun MainActivity.displayResult(root: JSONObject, fromCache: Boolean = f
                 .putExtra(RemoteLocationActivity.EXTRA_METHOD, "Chave salva"))
         },
     )
-    addActionGrid(container, cards)
-    val selectedHost = SettingsStore.getRemoteHost(this)
-    val recent = RemoteOperationHistory.read(this, selectedHost).firstOrNull()
-    if (recent != null) {
-        sectionGap(container, 11)
-        container.addView(dialogCardRow("Atividade recente de arquivos",
-            "${RemoteOperationHistoryPolicy.label(recent.operation)} · ${recent.outcome} · ${recent.done}/${recent.total} item(ns)", "›") {
-            startActivity(Intent(this, RemoteFilesActivity::class.java).apply {
-                putExtra(RemoteFilesActivity.EXTRA_HOST, selectedHost)
-                putExtra(RemoteFilesActivity.EXTRA_METHOD, remoteConnection.method)
-            })
-        })
+
+    fun guarded(tiles: List<LinearLayout>) {
+        // Os cards já têm callbacks para suas respectivas Activities; em estado sem
+        // pareamento, bloquear esses callbacks e encaminhar ao pareamento explícito.
+        if (!keyAvailable) tiles.forEach { item ->
+            item.setOnClickListener { showConnectionChooser() }
+            item.contentDescription = "${item.contentDescription}. Conecte um aparelho primeiro"
+        }
     }
-    if (fromCache && remoteConnection.state != "connected") {
-        sectionGap(container, 12)
-        container.addView(label("Exibindo a última leitura armazenada. Aguarde nova consulta para confirmar os dados.", 11f, muted = true))
+    guarded(cards)
+    val shortcuts = listOf(cards[4], cards[0], cards[6], cards[11]) // Tela, Arquivos, Câmeras, Localização
+    val others = cards.filterNot { it in shortcuts }
+    mobileDashboardHeader(container, "Acesso rápido", "4 funções")
+    mobileActionGrid(container, shortcuts)
+    sectionGap(container, 17)
+    mobileDashboardHeader(container, "Outras funções", "8 funções")
+    val toggle = actionButton(if (expandedRemoteFunctions) "⌃  Ocultar funções" else "⌄  Mostrar todas as funções") {
+        expandedRemoteFunctions = !expandedRemoteFunctions
+        // Redesenhar somente a seção remota; não refazer polling ou reconectar.
+        if (snapshot == null) displayEmptyRemoteDashboard() else displayResult(snapshot,
+            fromCache = cachedReading)
+    }.apply {
+        textSize = 13.5f
+        background = shape(surface, 18, true)
+        minimumHeight = dp(50)
+    }
+    if (expandedRemoteFunctions) {
+        mobileActionGrid(container, others)
+        sectionGap(container, 9)
+    }
+    container.addView(toggle, LinearLayout.LayoutParams(-1, dp(50)))
+}
+
+private fun MainActivity.mobileActionGrid(parent: LinearLayout, tiles: List<LinearLayout>) {
+    tiles.chunked(2).forEachIndexed { rowIndex, chunk ->
+        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        chunk.forEachIndexed { index, tile ->
+            tile.background = shape(fieldColor, 19)
+            tile.minimumHeight = dp(102)
+            row.addView(tile, LinearLayout.LayoutParams(0, dp(104), 1f).apply {
+                if (index == 0) rightMargin = dp(9)
+            })
+        }
+        if (chunk.size == 1) row.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+        parent.addView(row)
+        if (rowIndex < (tiles.size + 1) / 2 - 1) sectionGap(parent, 9)
     }
 }
 
@@ -275,56 +347,6 @@ private fun MainActivity.showRemoteMaintenance() {
     dialog.window?.setLayout((resources.displayMetrics.widthPixels * .92f).toInt().coerceAtMost(dp(520)), -2)
 }
 
-private fun MainActivity.compactMetricCard(icon: Int, title: String, value: String,
-    subtitle: String? = null, temperatureZone: BatteryTemperaturePolicy.Zone? = null,
-    onClick: (() -> Unit)? = null): LinearLayout =
-    LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        gravity = Gravity.CENTER
-        val themed = when (temperatureZone) {
-            BatteryTemperaturePolicy.Zone.COLD -> if (darkTheme()) Color.rgb(35, 61, 78) else Color.rgb(224, 241, 252)
-            BatteryTemperaturePolicy.Zone.WARM -> if (darkTheme()) Color.rgb(91, 67, 35) else Color.rgb(255, 240, 214)
-            BatteryTemperaturePolicy.Zone.HOT -> if (darkTheme()) Color.rgb(100, 42, 47) else Color.rgb(255, 226, 227)
-            BatteryTemperaturePolicy.Zone.NORMAL -> if (darkTheme()) Color.rgb(39, 72, 54) else Color.rgb(231, 246, 235)
-            else -> fieldColor
-        }
-        background = shape(themed, 14)
-        setPadding(dp(4), dp(7), dp(4), dp(7))
-        minimumHeight = dp(96)
-        addView(vectorIcon(icon, 21), LinearLayout.LayoutParams(dp(21), dp(21)))
-        addView(label(title, 11.5f, muted = true).apply {
-            gravity = Gravity.CENTER
-            maxLines = 1
-            setPadding(0, dp(4), 0, dp(2))
-        })
-        addView(label(value, 14f, strong = true).apply {
-            gravity = Gravity.CENTER
-            maxLines = 2
-            setPadding(0, 0, 0, 0)
-        })
-        if (!subtitle.isNullOrBlank()) addView(label(subtitle, 10.5f, muted = true).apply {
-            gravity = Gravity.CENTER
-            maxLines = 2
-            setPadding(dp(2), dp(3), dp(2), 0)
-        })
-        contentDescription = listOfNotNull(title, value, subtitle).joinToString(". ")
-        if (onClick != null) {
-            isClickable = true; isFocusable = true
-            setOnClickListener { onClick() }
-        }
-    }
-
-private fun MainActivity.addMetricGrid(parent: LinearLayout, cards: List<LinearLayout>) {
-    val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-    cards.forEachIndexed { index, card ->
-        row.addView(card, LinearLayout.LayoutParams(0, -2, 1f).apply {
-            if (index < cards.lastIndex) rightMargin = dp(8)
-        })
-    }
-    parent.addView(row)
-}
-
-/** Grade compacta de três colunas em retrato, sem esconder ações por falta de largura. */
 private fun MainActivity.actionTile(icon: Int, title: String, subtitle: String, enabled: Boolean = false, onClick: () -> Unit): LinearLayout =
     LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
@@ -338,7 +360,7 @@ private fun MainActivity.actionTile(icon: Int, title: String, subtitle: String, 
         setOnClickListener { onClick() }
         addView(vectorIcon(icon, 23, if (enabled) ink else dim),
             LinearLayout.LayoutParams(dp(23), dp(23)).apply { gravity = Gravity.CENTER_HORIZONTAL })
-        addView(label(title, 11.5f, strong = enabled).apply {
+        addView(label(title, 14f, strong = true).apply {
             gravity = Gravity.CENTER
             maxLines = 2
             setPadding(dp(1), dp(7), dp(1), 0)
@@ -346,20 +368,6 @@ private fun MainActivity.actionTile(icon: Int, title: String, subtitle: String, 
         })
         // Subtítulos permanecem no contentDescription para TalkBack; não ocupam linhas.
     }
-
-private fun MainActivity.addActionGrid(parent: LinearLayout, tiles: List<LinearLayout>) {
-    tiles.chunked(3).forEachIndexed { rowIndex, segment ->
-        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        segment.forEachIndexed { column, tile ->
-            row.addView(tile, LinearLayout.LayoutParams(0, dp(88), 1f).apply {
-                if (column < 2) rightMargin = dp(7)
-            })
-        }
-        repeat(3 - segment.size) { row.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f)) }
-        parent.addView(row)
-        if (rowIndex < (tiles.size + 2) / 3 - 1) sectionGap(parent, 7)
-    }
-}
 
 private fun MainActivity.showFeatureSoon(name: String, description: String) {
     showAppNotice(name, "$description\n\nEste recurso ainda não está implementado.", R.drawable.ic_info)

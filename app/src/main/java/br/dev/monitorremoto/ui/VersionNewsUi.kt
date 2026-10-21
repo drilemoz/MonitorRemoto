@@ -15,9 +15,9 @@ internal fun MainActivity.showVersionNews() {
     layout.addView(iconSectionHeader(R.drawable.ic_info, "Novidades · ${AppVersion.NAME}", "Bem-vindo à atualização"))
     sectionGap(layout, 10)
     val entries = listOf(
-        "Conexões mais estáveis" to "Ao reiniciar a escuta, o serviço encerra sockets antigos e suas operações pendentes.",
-        "Acessos recentes sem acúmulo" to "O histórico de alerta mantém só sessões atuais, evitando crescer com horas de monitoramento.",
-        "Pareamento protegido" to "Respostas atrasadas de uma chave removida ou trocada não são mais aceitas pelo controlador."
+        "Navegação inferior" to "Início, Controlar, Monitorado e Ajustes ficam disponíveis na barra inferior, mesmo ao rolar a página.",
+        "Controle para smartphones" to "Bateria, temperatura e rede em cartões legíveis; Tela, Arquivos, Câmeras e Localização em acesso rápido.",
+        "Mais funções preservadas" to "As outras oito ferramentas ficam na seção expansível, sem mudança nas permissões ou autenticação."
     )
     entries.forEach { (title, details) ->
         layout.addView(dialogCardRow(title, details, ""))

@@ -43,16 +43,17 @@ class MainActivity : Activity() {
         "system" -> (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
         else -> false
     }
-    internal val bg get() = if (darkTheme()) Color.rgb(14, 22, 35) else Color.rgb(247, 249, 252)
-    internal val surface get() = if (darkTheme()) Color.rgb(28, 41, 58) else Color.WHITE
-    internal val ink get() = if (darkTheme()) Color.rgb(233, 239, 247) else Color.rgb(23, 34, 48)
-    internal val dim get() = if (darkTheme()) Color.rgb(167, 184, 203) else Color.rgb(92, 109, 128)
+    internal val bg get() = if (darkTheme()) Color.rgb(16, 18, 22) else Color.rgb(252, 252, 252)
+    internal val surface get() = if (darkTheme()) Color.rgb(29, 31, 35) else Color.WHITE
+    internal val ink get() = if (darkTheme()) Color.rgb(241, 242, 244) else Color.rgb(23, 23, 23)
+    internal val dim get() = if (darkTheme()) Color.rgb(175, 179, 185) else Color.rgb(103, 103, 103)
     internal val highlight get() = if (darkTheme()) Color.rgb(90, 214, 188) else Color.rgb(24, 166, 146)
     internal val highlightText get() = if (darkTheme()) Color.rgb(14, 22, 35) else Color.WHITE
-    internal val lineColor get() = if (darkTheme()) Color.rgb(47, 64, 83) else Color.rgb(224, 231, 239)
+    internal val lineColor get() = if (darkTheme()) Color.rgb(58, 60, 63) else Color.rgb(232, 232, 232)
     internal val secondaryAccent get() = if (darkTheme()) Color.rgb(54, 116, 171) else Color.rgb(38, 113, 174)
-    internal val fieldColor get() = if (darkTheme()) Color.rgb(22, 34, 50) else Color.rgb(242, 246, 250)
+    internal val fieldColor get() = if (darkTheme()) Color.rgb(39, 41, 45) else Color.rgb(242, 242, 242)
     internal lateinit var content: LinearLayout
+    internal lateinit var bottomNavigation: LinearLayout
     internal val handler = Handler(Looper.getMainLooper())
     internal val remoteConnection by lazy { RemoteConnectionManager(applicationContext) }
     internal val pairingController = PairingController()
@@ -67,6 +68,7 @@ class MainActivity : Activity() {
     internal var messagesError: String? = null
     internal var messagesTechnicalExpanded = false
     internal var messagesRequestGeneration = 0
+    internal var expandedRemoteFunctions = false
     internal var mode = 2 // 2: início, 0: monitorado, 1: controle, 3: configurações, 4: mensagens
     internal var settingsSection = "home"
     private var settingsReturnMode = 2
@@ -122,6 +124,7 @@ class MainActivity : Activity() {
             else savedInstanceState?.getInt("active_mode", 2)?.takeIf { it in 0..4 } ?: 2
         settingsSection = savedInstanceState?.getString("settings_section", "home") ?: "home"
         messagesTab = savedInstanceState?.getInt("messages_tab", 0)?.coerceIn(0, 1) ?: 0
+        expandedRemoteFunctions = savedInstanceState?.getBoolean("expanded_remote_functions", false) ?: false
         if (mode == 4) {
             messagesHost = SettingsStore.getRemoteHost(this)
             messagesBaselineMs = lastMessageViewedMs[messagesHost] ?: 0L
@@ -131,13 +134,30 @@ class MainActivity : Activity() {
         window.navigationBarColor = bg
         window.decorView.systemUiVisibility = if (darkTheme()) 0 else
             View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-        val scroll = ScrollView(this).apply { setBackgroundColor(bg); isFillViewport = true }
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(bg)
+        }
+        val scroll = ScrollView(this).apply {
+            setBackgroundColor(bg)
+            isFillViewport = false
+            clipToPadding = false
+        }
         content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(24), dp(18), dp(32))
+            setPadding(dp(16), dp(16), dp(16), dp(25))
         }
         scroll.addView(content)
-        setContentView(scroll)
+        root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        bottomNavigation = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            background = shape(bg, 0)
+            setPadding(dp(12), dp(8), dp(12), dp(8))
+            elevation = dp(5).toFloat()
+        }
+        root.addView(bottomNavigation, LinearLayout.LayoutParams(-1, dp(82)))
+        setContentView(root)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val callback = android.window.OnBackInvokedCallback {
                 if (mode == 3) navigateBackFromSettings()
@@ -172,6 +192,7 @@ class MainActivity : Activity() {
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putInt("active_mode", mode)
         outState.putInt("messages_tab", messagesTab)
+        outState.putBoolean("expanded_remote_functions", expandedRemoteFunctions)
         outState.putString("settings_section", settingsSection)
         outState.putInt("settings_return_mode", settingsReturnMode)
         super.onSaveInstanceState(outState)
@@ -228,45 +249,11 @@ class MainActivity : Activity() {
     internal fun render() {
         content.removeAllViews()
         if (mode != 0) displayedMonitorState = null
-        if (mode == 4) { renderRemoteMessagesPage(); return }
+        if (mode == 4) { renderBottomNavigation(); renderRemoteMessagesPage(); return }
         handler.removeCallbacks(monitorStatusPoll)
         if (active && mode == 0) handler.postDelayed(monitorStatusPoll, 5_000L)
-        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        val title = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        title.addView(label(if (mode == 3) "CONFIGURAÇÕES" else "MONITOR REMOTO", 18f, strong = true).apply {
-            maxLines = 1
-            ellipsize = android.text.TextUtils.TruncateAt.END
-        })
-        title.addView(label(when (mode) {
-            1 -> "Painel de controle · privado e criptografado"
-            0 -> "Modo monitorado · privado e criptografado"
-            3 -> "Configurações · módulos independentes"
-            else -> "Início · conexão e aparelhos anteriores"
-        }, 10.5f, muted = true).apply {
-            maxLines = 1
-            ellipsize = android.text.TextUtils.TruncateAt.END
-        })
-        header.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
-        if (mode == 3) {
-            header.addView(headerIconButton(R.drawable.ic_back, "Voltar") { navigateBackFromSettings() },
-                LinearLayout.LayoutParams(dp(45), dp(45)))
-        } else {
-            header.addView(headerIconButton(R.drawable.ic_phone, "Home: voltar à tela inicial") { navigateHome() },
-                LinearLayout.LayoutParams(dp(45), dp(45)))
-            header.addView(View(this), LinearLayout.LayoutParams(dp(8), 1))
-            header.addView(headerIconButton(R.drawable.ic_settings, "Configurações") { showSettingsDialog() },
-                LinearLayout.LayoutParams(dp(45), dp(45)))
-        }
-        content.addView(header)
-
-        val metaRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        metaRow.addView(infoChip("v${AppVersion.NAME}"))
-        metaRow.addView(View(this), LinearLayout.LayoutParams(dp(8), 1))
-        val monitorActive = SettingsStore.isMonitorEnabled(this) && MonitorService.isRunning
-        metaRow.addView(infoChip(if (monitorActive) "Monitorado ativo" else "Monitorado inativo", accent = monitorActive))
-        content.addView(metaRow)
-
-        gap(16)
+        renderBottomNavigation()
+        renderMobileHeader()
         when (mode) {
             0 -> renderMonitor()
             3 -> renderSettingsModule()
@@ -276,9 +263,26 @@ class MainActivity : Activity() {
             }
             else -> renderHome()
         }
-        gap(20)
-        addText("Somente em aparelhos próprios ou autorizados. Notificações permitidas são temporárias e filtradas.", 11f, muted = true)
+        if (mode == 0 || mode == 3) {
+            gap(17)
+            addText("Somente em aparelhos próprios ou autorizados. Dados compartilhados exigem permissões locais.", 11f, muted = true)
+        }
         if (mode == 0) displayedMonitorState = currentMonitorState()
+    }
+
+    /** Navegação principal: não toca em chaves, sockets ou permissões do Android. */
+    internal fun navigateMainTab(destination: Int) {
+        if (destination !in listOf(0, 1, 2, 3)) return
+        if (mode == destination && (destination != 3 || settingsSection == "home")) return
+        if (mode == 4) clearRemoteMessagesScreen()
+        if (destination == 3) {
+            openSettingsModule()
+            return
+        }
+        mode = destination
+        settingsSection = "home"
+        render()
+        (content.parent as? ScrollView)?.scrollTo(0, 0)
     }
 
     /** Home retorna à escolha inicial, preservando serviço e chaves de pareamento. */
